@@ -657,7 +657,9 @@
           <root url="jar://$USER_HOME$/.gradle/wrapper/dists/gradle-2.5-bin/7mk8vyobxfh3eazpg3pi2y9mv/gradle-2.5/lib/asm-all-5.0.3.jar!/" />
         </CLASSES>
         <JAVADOC />
-        <SOURCES />
+        <SOURCES>
+          <root url="jar://$USER_HOME$/.ideaLibSources/asm-all-5.0.3-sources.jar!/" />
+        </SOURCES>
       </library>
     </orderEntry>
     <orderEntry type="module-library">

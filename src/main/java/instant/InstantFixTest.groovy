@@ -9,9 +9,10 @@ class InstantFixTest {
 
     public static void main(String[] args) {
 //        inject();
-        ArrayList<String> list = new ArrayList<>()
-        list.add("com.mogujie.instantfix.MainActivity")
-        addPatchesLoaderClass(list);
+        hotfix(null);
+//        ArrayList<String> list = new ArrayList<>()
+//        list.add("com.mogujie.instantfix.MainActivity")
+//        addPatchesLoaderClass(list);
     }
 
 
@@ -32,16 +33,18 @@ class InstantFixTest {
     }
 
     public static void hotfix(String[] args) {
-//        StringBuilder sb = new StringBuilder()
+        StringBuilder sb = new StringBuilder()
 //        sb.append("/Users/farmerjohn/Library/Android/sdk/platforms/android-22/android.jar")
 //        sb.append(File.pathSeparator)
 //        sb.append("/Users/farmerjohn/AndroidStudioProjects/InstantFix/app/build/intermediates/exploded-aar/com.android.support/appcompat-v7/22.2.0/jars/classes.jar")
 //        sb.append(File.pathSeparator)
 //        sb.append("/Users/farmerjohn/AndroidStudioProjects/InstantFix/app/build/intermediates/exploded-aar/com.android.support/support-v4/22.2.0/jars/classes.jar")
-//
-//        String[] args = new String[3];
+
+//        sb.append("/Users/farmerjohn/AndroidStudioProjects/InstantFix/app/build/intermediates/exploded-aar/com.android.support/support-v4/22.2.0/jars/libs/internal_impl-22.2.0.jar:/Users/farmerjohn/AndroidStudioProjects/InstantFix/app/build/intermediates/exploded-aar/com.android.support/support-v4/22.2.0/jars/classes.jar:/Users/farmerjohn/Library/Android/sdk/extras/android/m2repository/com/android/support/support-annotations/22.2.0/support-annotations-22.2.0.jar:/Users/farmerjohn/AndroidStudioProjects/InstantFix/app/build/intermediates/exploded-aar/com.android.support/appcompat-v7/22.2.0/jars/classes.jar:/Users/farmerjohn/AndroidStudioProjects/InstantFix/app/build/intermediates/exploded-aar/InstantFix/lib/unspecified/jars/classes.jar:/Users/farmerjohn/Library/Android/sdk/platforms/android-22/android.jar")
+
+//         args = new String[3];
 //        args[0] = "/Users/farmerjohn/AndroidStudioProjects/InstantFix/app/build/intermediates/classes/debug";
-//        args[1] = "/Users/farmerjohn/IdeaProjects/Base/InstantFIx/resources/reload-fix";
+//        args[1] = "/Users/farmerjohn/IdeaProjects/instantfix/src/main/resources";
 //        args[2] = sb.toString()
         IncrementalChangeVisitor.main(args)
     }

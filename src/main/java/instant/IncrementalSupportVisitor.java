@@ -104,7 +104,7 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
         visitedClassName = name;
         visitedSuperName = superName;
 
-        addSerialUidIfMissing();
+//        addSerialUidIfMissing();
         super.visitField(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC
                         | Opcodes.ACC_VOLATILE | Opcodes.ACC_SYNTHETIC | Opcodes.ACC_TRANSIENT,
                 "$change", getRuntimeTypeName(CHANGE_TYPE), null, null);
@@ -555,7 +555,7 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
 
     @Override
     public void visitEnd() {
-        createAccessSuper();
+//        createAccessSuper();
         createDispatchingThis();
         super.visitEnd();
     }

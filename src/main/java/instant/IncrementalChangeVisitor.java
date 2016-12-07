@@ -69,7 +69,7 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
     };
 
     // todo : find a better way to specify logging and append to a log file.
-    private static final boolean DEBUG = false;
+    private static final boolean DEBUG = true;
 
     public static final String OVERRIDE_SUFFIX = "$override";
 
@@ -108,7 +108,7 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
     public void visit(int version, int access, String name, String signature, String superName,
                       String[] interfaces) {
         super.visit(version, Opcodes.ACC_PUBLIC | Opcodes.ACC_SUPER,
-                name + OVERRIDE_SUFFIX, signature, "java/lang/Object",
+                name + OVERRIDE_SUFFIX, signature, superName,
                 new String[]{CHANGE_TYPE.getInternalName()});
 
         if (DEBUG) {
@@ -538,14 +538,16 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
                     System.out.println(
                             "Super Method : " + name + ":" + desc + ":" + itf + ":" + isStatic);
                 }
-                int arr = boxParametersToNewLocalArray(Type.getArgumentTypes(desc));
-                push(name + "." + desc);
-                loadLocal(arr);
-                mv.visitMethodInsn(Opcodes.INVOKESTATIC, visitedClassName, "access$super",
-                        instanceToStaticDescPrefix
-                                + "Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/Object;",
-                        false);
-                handleReturnType(desc);
+                super.visitMethodInsn(Opcodes.INVOKESPECIAL, owner, name, desc, itf);
+
+//                int arr = boxParametersToNewLocalArray(Type.getArgumentTypes(desc));
+//                push(name + "." + desc);
+//                loadLocal(arr);
+//                mv.visitMethodInsn(Opcodes.INVOKESTATIC, visitedClassName, "access$super",
+//                        instanceToStaticDescPrefix
+//                                + "Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/Object;",
+//                        false);
+//                handleReturnType(desc);
 
                 return true;
             }
