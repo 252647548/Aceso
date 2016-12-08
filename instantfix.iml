@@ -44,7 +44,9 @@
           <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.mogujie.base/groovy/1.0.0.8/63df449aec842da0eb196c2ea128ba6d4e9aab44/groovy-1.0.0.8.jar!/" />
         </CLASSES>
         <JAVADOC />
-        <SOURCES />
+        <SOURCES>
+          <root url="file://$MODULE_DIR$/../Base/groovybase/src/main/groovy" />
+        </SOURCES>
       </library>
     </orderEntry>
     <orderEntry type="module-library">

@@ -22,6 +22,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.io.Files;
+import com.mogujie.groovy.util.Utils;
 import org.objectweb.asm.*;
 import org.objectweb.asm.commons.GeneratorAdapter;
 import org.objectweb.asm.commons.Method;
@@ -36,6 +37,9 @@ import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
+import java.util.zip.ZipOutputStream;
 
 public class IncrementalVisitor extends ClassVisitor {
 
@@ -93,6 +97,8 @@ public class IncrementalVisitor extends ClassVisitor {
         }
     }
 
+    public static int mtdCount = 0;
+
     public IncrementalVisitor(
             @NonNull ClassNode classNode,
             @NonNull List<ClassNode> parentNodes,
@@ -101,6 +107,12 @@ public class IncrementalVisitor extends ClassVisitor {
         this.classNode = classNode;
         this.parentNodes = parentNodes;
         LOG.info("%s: Visiting %s", getClass().getSimpleName(), classNode.name);
+    }
+
+    @Override
+    public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
+        mtdCount++;
+        return super.visitMethod(access, name, desc, signature, exceptions);
     }
 
     @NonNull
@@ -263,6 +275,9 @@ public class IncrementalVisitor extends ClassVisitor {
             @NonNull File outLocation,
             @NonNull VisitorBuilder visitorBuilder) throws IOException {
 
+        if (rootLocation.isFile() && (rootLocation.getName().endsWith(".jar") || rootLocation.getName().endsWith(".zip"))) {
+
+        }
         Iterable<File> files =
                 Files.fileTreeTraverser().preOrderTraversal(rootLocation).filter(Files.isFile());
 
@@ -283,6 +298,107 @@ public class IncrementalVisitor extends ClassVisitor {
      */
     protected static boolean isAccessCompatibleWithInstantRun(int access) {
         return (access & (Opcodes.ACC_ABSTRACT | Opcodes.ACC_BRIDGE | Opcodes.ACC_NATIVE)) == 0;
+    }
+
+    @Nullable
+    public static void instrumentClass(
+            ZipEntry entry,
+            ZipFile zipFile,
+            ZipOutputStream zos,
+            @NonNull VisitorBuilder visitorBuilder, boolean isHotfix) throws IOException {
+        byte[] classBytes = Utils.toByteArray(zipFile.getInputStream(entry));
+        ClassReader classReader = new ClassReader(classBytes);
+        // override the getCommonSuperClass to use the thread context class loader instead of
+        // the system classloader. This is useful as ASM needs to load classes from the project
+        // which the system classloader does not have visibility upon.
+        // TODO: investigate if there is not a simpler way than overriding.
+        ClassWriter classWriter = new ClassWriter(classReader, ClassWriter.COMPUTE_FRAMES) {
+            @Override
+            protected String getCommonSuperClass(final String type1, final String type2) {
+                Class<?> c, d;
+                ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+                try {
+                    c = Class.forName(type1.replace('/', '.'), false, classLoader);
+                    d = Class.forName(type2.replace('/', '.'), false, classLoader);
+                } catch (ClassNotFoundException e) {
+                    // This may happen if we're processing class files which reference APIs not
+                    // available on the target device. In this case return a dummy value, since this
+                    // is ignored during dx compilation.
+                    return "instant/run/NoCommonSuperClass";
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+                if (c.isAssignableFrom(d)) {
+                    return type1;
+                }
+                if (d.isAssignableFrom(c)) {
+                    return type2;
+                }
+                if (c.isInterface() || d.isInterface()) {
+                    return "java/lang/Object";
+                } else {
+                    do {
+                        c = c.getSuperclass();
+                    } while (!c.isAssignableFrom(d));
+                    return c.getName().replace('.', '/');
+                }
+            }
+        };
+
+        ClassNode classNode = new ClassNode();
+        classReader.accept(classNode, ClassReader.EXPAND_FRAMES);
+
+        // when dealing with interface, we just copy the inputFile over without any changes unless
+        // this is a package private interface.
+        AccessRight accessRight = AccessRight.fromNodeAccess(classNode.access);
+        ZipEntry nowEntry;
+        if (isHotfix) {
+            String name = entry.getName();
+            name = name.substring(0, name.lastIndexOf(".class"));
+            nowEntry = new ZipEntry(name + "$override" + ".class");
+        } else {
+            nowEntry = new ZipEntry(entry.getName());
+        }
+        zos.putNextEntry(nowEntry);
+
+
+        if ((classNode.access & Opcodes.ACC_INTERFACE) != 0) {
+            if (visitorBuilder.getOutputType() == OutputType.INSTRUMENT) {
+                // don't change the name of interfaces.
+
+                if (accessRight == AccessRight.PACKAGE_PRIVATE) {
+                    classNode.access = classNode.access | Opcodes.ACC_PUBLIC;
+                    classNode.accept(classWriter);
+                    zos.write(classWriter.toByteArray());
+                } else {
+                    // just copy the input file over, no change.
+                    zos.write(classBytes);
+                }
+                zos.closeEntry();
+                return;
+            } else {
+                return;
+            }
+        }
+
+        List<ClassNode> parentsNodes = parseParents(zipFile, classNode);
+
+        // if we could not determine the parent hierarchy, disable instant run.
+        if (parentsNodes.isEmpty() || false) {
+            if (visitorBuilder.getOutputType() == OutputType.INSTRUMENT) {
+                zos.write(classBytes);
+                zos.closeEntry();
+                return;
+            } else {
+                return;
+            }
+        }
+
+        IncrementalVisitor visitor = visitorBuilder.build(classNode, parentsNodes, classWriter);
+        classNode.accept(visitor);
+
+        zos.write(classWriter.toByteArray());
+        zos.closeEntry();
     }
 
     @Nullable
@@ -392,6 +508,49 @@ public class IncrementalVisitor extends ClassVisitor {
                 inputFile.getAbsolutePath().length() - (classNode.name.length() + ".class".length())));
     }
 
+
+    @NonNull
+    private static List<ClassNode> parseParents(
+            @NonNull ZipFile zipFile, @NonNull ClassNode classNode) throws IOException {
+//        File binaryFolder = getBinaryFolder(inputFile, classNode);
+        List<ClassNode> parentNodes = new ArrayList<ClassNode>();
+        String currentParentName = classNode.superName;
+
+        while (currentParentName != null) {
+            ZipEntry zipEntry = zipFile.getEntry(currentParentName + ".class");
+//            File parentFile = new File(binaryFolder, currentParentName + ".class");
+            if (zipEntry != null) {
+//                LOG.info("Parsing %s.", zipEntry.getName());
+                InputStream parentFileClassReader = new BufferedInputStream(zipFile.getInputStream(zipEntry));
+                ClassReader parentClassReader = new ClassReader(parentFileClassReader);
+                ClassNode parentNode = new ClassNode();
+                parentClassReader.accept(parentNode, ClassReader.EXPAND_FRAMES);
+                parentNodes.add(parentNode);
+                currentParentName = parentNode.superName;
+            } else {
+                // May need method information from outside of the current project. Thread local class reader
+                // should be the one
+                try {
+                    ClassReader parentClassReader = new ClassReader(
+                            Thread.currentThread().getContextClassLoader().getResourceAsStream(
+                                    currentParentName + ".class"));
+                    ClassNode parentNode = new ClassNode();
+                    parentClassReader.accept(parentNode, ClassReader.EXPAND_FRAMES);
+                    parentNodes.add(parentNode);
+                    currentParentName = parentNode.superName;
+                } catch (IOException e) {
+                    // Could not locate parent class. This is as far as we can go locating parents.
+                    LOG.info(
+                            "IncrementalVisitor parseParents could not locate %1$s "
+                                    + "which is an ancestor of project class %2$s.\n",
+                            currentParentName, classNode.name);
+                    return ImmutableList.of();
+                }
+            }
+        }
+        return parentNodes;
+    }
+
     @NonNull
     private static List<ClassNode> parseParents(
             @NonNull File inputFile, @NonNull ClassNode classNode) throws IOException {
@@ -467,4 +626,6 @@ public class IncrementalVisitor extends ClassVisitor {
         }
         return false;
     }
+
+
 }

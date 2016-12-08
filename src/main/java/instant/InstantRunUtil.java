@@ -1,21 +1,17 @@
 package instant;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.io.Files;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
-
-import java.io.File;
-import java.io.IOException;
 
 /**
  * Created by wangzhi on 16/12/6.
  */
 public class InstantRunUtil {
 
-    public static void writePatchFileContents(
-            @NonNull ImmutableList<String> patchFileContents, @NonNull File outputDir, long buildId) {
+    public static byte[] getPatchFileContents(
+            @NonNull ImmutableList<String> patchFileContents, long buildId) {
 
         ClassWriter cw = new ClassWriter(0);
         MethodVisitor mv;
@@ -45,7 +41,7 @@ public class InstantRunUtil {
             mv.visitCode();
             mv.visitIntInsn(Opcodes.BIPUSH, patchFileContents.size());
             mv.visitTypeInsn(Opcodes.ANEWARRAY, "java/lang/String");
-            for (int index=0; index < patchFileContents.size(); index++) {
+            for (int index = 0; index < patchFileContents.size(); index++) {
                 mv.visitInsn(Opcodes.DUP);
                 mv.visitIntInsn(Opcodes.BIPUSH, index);
                 mv.visitLdcInsn(patchFileContents.get(index));
@@ -57,13 +53,7 @@ public class InstantRunUtil {
         }
         cw.visitEnd();
 
-        byte[] classBytes = cw.toByteArray();
-        File outputFile = new File(outputDir, IncrementalVisitor.APP_PATCHES_LOADER_IMPL + ".class");
-        try {
-            Files.createParentDirs(outputFile);
-            Files.write(classBytes, outputFile);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        return cw.toByteArray();
+
     }
 }

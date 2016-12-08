@@ -77,6 +77,8 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
     @NonNull
     public static final IncrementalVisitor.VisitorBuilder VISITOR_BUILDER = new VisitorBuilder();
 
+
+
     public IncrementalSupportVisitor(
             @NonNull ClassNode classNode,
             @NonNull List<ClassNode> parentNodes,
@@ -426,8 +428,8 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
                             methodRef.method.name, methodRef.method.desc);
                 }
                 String parentName = findParentClassForMethod(methodRef);
-                LOG.verbose("Generating access$super for " + methodRef.method.name + " recv "
-                        + parentName);
+//                LOG.verbose("Generating access$super for " + methodRef.method.name + " recv "
+//                        + parentName);
 
                 // Call super on the other object, yup this works cos we are on the right place to
                 // call from.
@@ -614,9 +616,9 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
      */
     @NonNull
     String findParentClassForMethod(@NonNull MethodReference methodReference) {
-        LOG.verbose("MethodRef %1$s access(%2$d) -> owner %3$s access(%4$d)",
-                methodReference.method.name, methodReference.method.access,
-                methodReference.owner.name, methodReference.owner.access);
+//        LOG.verbose("MethodRef %1$s access(%2$d) -> owner %3$s access(%4$d)",
+//                methodReference.method.name, methodReference.method.access,
+//                methodReference.owner.name, methodReference.owner.access);
         // if the method owner class is accessible from the visited class, just use that.
         if (isParentClassVisible(methodReference.owner, classNode)) {
             return methodReference.owner.name;

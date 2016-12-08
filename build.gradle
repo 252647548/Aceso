@@ -33,10 +33,9 @@ dependencies {
 }
 
 
-
 upinfo {
     groupId = 'com.mogujie.gradle'
     artifactId = 'instantfix'
-    version = '0.0.0.11'
+    version = '0.0.1.10-SNAPSHOT'
 }
 
