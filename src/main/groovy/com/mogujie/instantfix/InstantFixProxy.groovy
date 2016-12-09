@@ -7,7 +7,7 @@ import com.mogujie.groovy.util.Utils
 import instant.IncrementalChangeVisitor
 import instant.IncrementalSupportVisitor
 import instant.IncrementalVisitor
-import instant.InstantRunUtil
+import instant.InstantRunTool
 
 import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
@@ -114,7 +114,7 @@ class InstantFixProxy {
 
     public static byte[] getPatchesLoaderClass(ArrayList list) {
         ImmutableList<String> immutableList = ImmutableList.copyOf(list)
-        return InstantRunUtil.getPatchFileContents(immutableList, 1)
+        return InstantRunTool.getPatchFileContents(immutableList, 1)
     }
 
 }

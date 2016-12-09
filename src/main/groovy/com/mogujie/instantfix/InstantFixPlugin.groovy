@@ -3,6 +3,7 @@ package com.mogujie.instantfix
 import com.android.build.api.transform.Format
 import com.android.build.api.transform.Transform
 import com.android.build.gradle.internal.pipeline.IntermediateFolderUtils
+import com.mogujie.groovy.util.Log
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.Plugin
@@ -38,16 +39,6 @@ class InstantFixPlugin implements Plugin<Project> {
         return jarMergingTask
     }
 
-    public HotfixTask initHotfixTask(Project project, String varName) {
-        HotfixTask hotfixTask = project.tasks.create("hotfix${varName}", HotfixTask.class)
-        hotfixTask.outputs.upToDateWhen { return false }
-
-//        def classTask = project.tasks.findByName("compile${varName}JavaWithJavac")
-//        classTask.outputs.upToDateWhen { return false }
-//        hotfixTask.dependsOn(classTask)
-
-        return hotfixTask
-    }
 
     public File getCombindJar(DefaultTask jarMergingTask) {
         Collection<File> outputs = jarMergingTask.outputs.files.files.findAll { file -> file.isDirectory() }
@@ -55,7 +46,7 @@ class InstantFixPlugin implements Plugin<Project> {
             throw new GradleException("illegal out put in ${jarMergingTask.name}'s output: ${outputs} . ")
         }
         File jarMergingDir = outputs.getAt(0)
-        println("jarMergingDir is " + jarMergingDir.absolutePath)
+        Log.i("jarMergingDir is " + jarMergingDir.absolutePath)
         Transform transform = jarMergingTask.transform
         File combindJar = null
         if (isProguard) {
@@ -64,39 +55,49 @@ class InstantFixPlugin implements Plugin<Project> {
         } else {
             combindJar = IntermediateFolderUtils.getContentLocation(jarMergingDir, "combined", transform.getOutputTypes(), transform.getScopes(), Format.JAR);
         }
-        println "combind jar : " + combindJar
+        Log.i "combind jar : " + combindJar
         return combindJar
     }
 
 
     public void doIt(org.gradle.api.Project project, def variant) {
         String varName = variant.name.capitalize()
+        //todo support debug
         if (!varName.toLowerCase().contains("release")) {
             return
         }
         def jarMergingTask = findJarMergingTask(project, varName)
+        HotFixTask hotFixTask = project.tasks.create("hotfix" + varName, HotFixTask, new HotFixTask.HotFixAction(varName))
 
         isHotfix = project.gradle.getStartParameter().taskNames.any { taskName ->
-            println "task " + taskName
+            Log.i "task " + taskName
             if (taskName.startsWith("hotfix")) {
                 return true
             }
         }
-        HotfixTask hotfixTask = initHotfixTask(project, varName)
+
         if (isHotfix) {
-            hotfixTask.dependsOn jarMergingTask
+            Log.i "is hotfix "
+            jarMergingTask.outputs.upToDateWhen { return false }
+
             jarMergingTask.doLast {
                 File combindJar = getCombindJar(jarMergingTask)
-                println "combindJar is " + combindJar
-                hotfixTask.combindJar = combindJar
+                Log.i "combindJar is " + combindJar
+                File combindBackupJar = InstantUtil.initFile(project.buildDir, "intermediates/jar-backup/" + combindJar.name)
+
+                File fixJar = InstantUtil.initFile(project.buildDir, "intermediates/jar-hotfix/" + combindJar.name)
+                InstantFixProxy.hotfix(combindJar, fixJar, new File(InstantUtil.getAndroidSdkPath(project)))
+
+                InstantUtil.copy(project, combindJar, combindBackupJar.parentFile)
+
+                InstantUtil.copy(project, fixJar, combindJar.parentFile)
             }
-            println "is hotfix"
             return
         } else {
 
             jarMergingTask.doLast {
                 if (!config.instrument) {
-                    println "instrument is disable"
+                    Log.i "instrument is disable"
                     return;
                 }
                 File combindJar = getCombindJar(jarMergingTask)
@@ -113,23 +114,18 @@ class InstantFixPlugin implements Plugin<Project> {
                     throw new RuntimeException("not found android jar.")
                 }
 
-                println "start inject "
+                Log.i "start inject "
                 InstantFixProxy.instrument(combindJar, instrumentJar, androidJar)
 
                 //backup origin jar and overlay origin jar
                 File classBackupDir = new File(project.buildDir, "intermediates/jar-backup")
-                project.copy {
-                    from(combindJar)
-                    into classBackupDir.absolutePath
-                    println "copy from ${combindJar.absolutePath} to ${classBackupDir.absolutePath}"
-                }
+
+                InstantUtil.copy(project, combindJar, classBackupDir)
+
                 combindJar.delete()
 
-                project.copy {
-                    from instrumentJar
-                    into combindJar.parentFile
-                    println "copy from ${instrumentJar.absolutePath} to ${combindJar.parentFile.absolutePath}"
-                }
+                InstantUtil.copy(project, instrumentJar, combindJar.parentFile)
+
 
             }
 

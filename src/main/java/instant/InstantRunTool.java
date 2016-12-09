@@ -8,7 +8,7 @@ import org.objectweb.asm.Opcodes;
 /**
  * Created by wangzhi on 16/12/6.
  */
-public class InstantRunUtil {
+public class InstantRunTool {
 
     public static byte[] getPatchFileContents(
             @NonNull ImmutableList<String> patchFileContents, long buildId) {
