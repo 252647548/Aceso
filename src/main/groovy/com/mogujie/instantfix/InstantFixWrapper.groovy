@@ -1,5 +1,4 @@
 package com.mogujie.instantfix
-
 import com.google.common.collect.ImmutableList
 import com.google.common.collect.Iterables
 import com.mogujie.groovy.util.Log
@@ -12,11 +11,16 @@ import instant.InstantRunTool
 import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
 import java.util.zip.ZipOutputStream
-
 /**
  * Created by wangzhi on 16/12/5.
  */
-class InstantFixProxy {
+class InstantFixWrapper {
+
+    public interface InstrumentFilter {
+        boolean accept(String name)
+    }
+
+    static InstrumentFilter filter
 
     public static void instrument(File combindJar, File supportJar, File androidJar) {
         inject(combindJar, supportJar, androidJar, IncrementalSupportVisitor.VISITOR_BUILDER, false)
@@ -79,32 +83,15 @@ class InstantFixProxy {
         }
     }
 
-    static def MATCHER_R = '''.*/R\\$.*\\.class|.*/R\\.class'''
+
 
     public static boolean support(String name) {
-        if (!name.endsWith(".class")) {
-            return false
-        }
-        if (name.endsWith("BuildConfig.class") || name ==~ MATCHER_R) {
-            Log.v("skip BuildConfig or R ==>  " + name)
-            return false
-        }
-        if (name.startsWith("com/mogujie/")) {
+        if (filter == null) {
+            Log.i("filter is null.")
             return true
         } else {
-            return false
+            return filter.accept(name)
         }
-//        if (name.startsWith("com/xiaomi/")
-//                || name.startsWith("org/apache/")
-//                || name.startsWith("com/android/")
-//                || name.startsWith("com/google/")
-//                || name.startsWith("android/")
-//                || name.startsWith("org/")
-//                || name.startsWith("okhttp3/")) {
-//            return false
-//        } else {
-//            return true
-//        }
     }
 
     public static void hotfix(File combindJar, File instrumentJar, File androidJar) {
@@ -116,5 +103,7 @@ class InstantFixProxy {
         ImmutableList<String> immutableList = ImmutableList.copyOf(list)
         return InstantRunTool.getPatchFileContents(immutableList, 1)
     }
+
+
 
 }

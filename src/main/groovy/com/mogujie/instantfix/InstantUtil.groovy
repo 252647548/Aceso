@@ -1,5 +1,6 @@
 package com.mogujie.instantfix
 
+import com.mogujie.groovy.util.Log
 import com.mogujie.groovy.util.Utils
 import org.gradle.api.Project
 import org.gradle.api.Task
@@ -34,5 +35,17 @@ class InstantUtil {
             return apk.name.endsWith(".apk")
         }
         return apk
+    }
+
+    public static boolean isHotFix(Project project) {
+        return project.gradle.getStartParameter().taskNames.any { taskName ->
+            Log.i "task " + taskName
+            if (taskName.startsWith("hotfix")) {
+                return true
+            }
+        }
+    }
+    public static boolean isProguard(Project project, String varName) {
+        return (project.tasks.findByName("transformClassesAndResourcesWithProguardFor${varName}") != null)
     }
 }
