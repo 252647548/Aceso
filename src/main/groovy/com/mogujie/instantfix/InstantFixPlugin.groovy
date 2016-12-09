@@ -1,9 +1,14 @@
 package com.mogujie.instantfix
 
+import com.android.SdkConstants
 import com.android.build.api.transform.Format
 import com.android.build.api.transform.Transform
 import com.android.build.gradle.internal.pipeline.IntermediateFolderUtils
+import com.android.build.gradle.internal.transforms.JarMerger
+import com.android.build.gradle.tasks.factory.AndroidJavaCompile
+import com.android.builder.signing.SignedJarBuilder
 import com.mogujie.groovy.util.Log
+import com.mogujie.groovy.util.Utils
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.Plugin
@@ -21,6 +26,8 @@ class InstantFixPlugin implements Plugin<Project> {
     @Override
     void apply(Project project) {
         project.extensions.create("InstantFix", InstantFixExt);
+
+
         project.afterEvaluate {
             config = project.extensions.findByName("InstantFix") as InstantFixExt
             project.android.applicationVariants.all { variant ->
@@ -62,11 +69,9 @@ class InstantFixPlugin implements Plugin<Project> {
 
     public void doIt(org.gradle.api.Project project, def variant) {
         String varName = variant.name.capitalize()
-        //todo support debug
-        if (!varName.toLowerCase().contains("release")) {
-            return
-        }
+
         def jarMergingTask = findJarMergingTask(project, varName)
+
         HotFixTask hotFixTask = project.tasks.create("hotfix" + varName, HotFixTask, new HotFixTask.HotFixAction(varName))
 
         isHotfix = project.gradle.getStartParameter().taskNames.any { taskName ->
@@ -76,24 +81,57 @@ class InstantFixPlugin implements Plugin<Project> {
             }
         }
 
+
+
         if (isHotfix) {
             Log.i "is hotfix "
-            jarMergingTask.outputs.upToDateWhen { return false }
+            if (jarMergingTask == null) {
+                //patch class transorm will do
+                Log.i("jarMergingTask is null")
+                AndroidJavaCompile classTask = project.tasks.findByName("compile${varName}JavaWithJavac")
+                classTask.doLast {
+                    File tempJarFile = InstantUtil.initFile(project.buildDir, "intermediates/class-hotfix-jar/temp.jar")
+                    File jarFile = InstantUtil.initFile(project.buildDir, "intermediates/class-hotfix-jar/allclasses.jar")
+                    JarMerger jarMerger = new JarMerger(tempJarFile)
+                    jarMerger.setFilter(new SignedJarBuilder.IZipEntryFilter() {
+                        @Override
+                        public boolean checkEntry(String archivePath)
+                                throws SignedJarBuilder.IZipEntryFilter.ZipAbortException {
+                            return archivePath.endsWith(SdkConstants.DOT_CLASS);
+                        }
+                    });
+                    jarMerger.addFolder(classTask.destinationDir)
+                    jarMerger.close()
+                    InstantFixProxy.hotfix(tempJarFile, jarFile, new File(InstantUtil.getAndroidSdkPath(project)))
+                    Utils.clearDir(classTask.destinationDir)
+                    project.copy {
+                        from project.zipTree(jarFile)
+                        into classTask.destinationDir
+                    }
+                }
 
-            jarMergingTask.doLast {
-                File combindJar = getCombindJar(jarMergingTask)
-                Log.i "combindJar is " + combindJar
-                File combindBackupJar = InstantUtil.initFile(project.buildDir, "intermediates/jar-backup/" + combindJar.name)
+            } else {
+                jarMergingTask.outputs.upToDateWhen { return false }
+                jarMergingTask.doLast {
+                    File combindJar = getCombindJar(jarMergingTask)
+                    Log.i "combindJar is " + combindJar
+                    File combindBackupJar = InstantUtil.initFile(project.buildDir, "intermediates/jar-backup/" + combindJar.name)
 
-                File fixJar = InstantUtil.initFile(project.buildDir, "intermediates/jar-hotfix/" + combindJar.name)
-                InstantFixProxy.hotfix(combindJar, fixJar, new File(InstantUtil.getAndroidSdkPath(project)))
+                    File fixJar = InstantUtil.initFile(project.buildDir, "intermediates/jar-hotfix/" + combindJar.name)
+                    InstantFixProxy.hotfix(combindJar, fixJar, new File(InstantUtil.getAndroidSdkPath(project)))
 
-                InstantUtil.copy(project, combindJar, combindBackupJar.parentFile)
+                    InstantUtil.copy(project, combindJar, combindBackupJar.parentFile)
 
-                InstantUtil.copy(project, fixJar, combindJar.parentFile)
+                    InstantUtil.copy(project, fixJar, combindJar.parentFile)
+                }
             }
+
             return
         } else {
+            //todo jarMergingTask == null
+            if (jarMergingTask == null) {
+                throw new GradleException("jarMergingTask is null!")
+            }
 
             jarMergingTask.doLast {
                 if (!config.instrument) {
