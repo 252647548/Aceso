@@ -301,7 +301,7 @@ public class IncrementalVisitor extends ClassVisitor {
     }
 
     @Nullable
-    public static void instrumentClass(
+    public static boolean instrumentClass(
             ZipEntry entry,
             ZipFile zipFile,
             ZipOutputStream zos,
@@ -359,13 +359,11 @@ public class IncrementalVisitor extends ClassVisitor {
         } else {
             nowEntry = new ZipEntry(entry.getName());
         }
-        zos.putNextEntry(nowEntry);
-
 
         if ((classNode.access & Opcodes.ACC_INTERFACE) != 0) {
             if (visitorBuilder.getOutputType() == OutputType.INSTRUMENT) {
                 // don't change the name of interfaces.
-
+                zos.putNextEntry(nowEntry);
                 if (accessRight == AccessRight.PACKAGE_PRIVATE) {
                     classNode.access = classNode.access | Opcodes.ACC_PUBLIC;
                     classNode.accept(classWriter);
@@ -375,9 +373,9 @@ public class IncrementalVisitor extends ClassVisitor {
                     zos.write(classBytes);
                 }
                 zos.closeEntry();
-                return;
+                return true;
             } else {
-                return;
+                return false;
             }
         }
 
@@ -386,19 +384,23 @@ public class IncrementalVisitor extends ClassVisitor {
         // if we could not determine the parent hierarchy, disable instant run.
         if (parentsNodes.isEmpty() || false) {
             if (visitorBuilder.getOutputType() == OutputType.INSTRUMENT) {
+                zos.putNextEntry(nowEntry);
                 zos.write(classBytes);
                 zos.closeEntry();
-                return;
+                return true;
             } else {
-                return;
+                return false;
             }
         }
+
 
         IncrementalVisitor visitor = visitorBuilder.build(classNode, parentsNodes, classWriter);
         classNode.accept(visitor);
 
+        zos.putNextEntry(nowEntry);
         zos.write(classWriter.toByteArray());
         zos.closeEntry();
+        return true;
     }
 
     @Nullable

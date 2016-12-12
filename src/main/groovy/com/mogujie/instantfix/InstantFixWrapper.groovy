@@ -54,13 +54,15 @@ class InstantFixWrapper {
                 String entryName = entry.name
                 if (isHotfix || support(entryName)) {
                     count++;
-                    IncrementalVisitor.instrumentClass(entry, zipFile, zos, builder, isHotfix)
+                   boolean isPatch= IncrementalVisitor.instrumentClass(entry, zipFile, zos, builder, isHotfix)
                     mtdCount += IncrementalVisitor.mtdCount;
                     Log.i("class ${entryName}'s mtd count : " + IncrementalVisitor.mtdCount)
                     IncrementalVisitor.mtdCount = 0;
                     entryName = entryName.substring(0, entryName.lastIndexOf(".class"))
                     entryName = entryName.replace(File.separator, ".")
-                    fixClassList.add(entryName)
+                    if(isPatch){
+                        fixClassList.add(entryName)
+                    }
                 } else {
                     ZipEntry newEntry = new ZipEntry(entry.name)
                     zos.putNextEntry(newEntry)
