@@ -22,17 +22,19 @@ class InstantFixWrapper {
 
     static InstrumentFilter filter
 
-    public static void instrument(File combindJar, File supportJar, File androidJar) {
-        inject(combindJar, supportJar, androidJar, IncrementalSupportVisitor.VISITOR_BUILDER, false)
+    public static void instrument(File combindJar, File supportJar,  ArrayList<File> classPath) {
+        inject(combindJar, supportJar, classPath, IncrementalSupportVisitor.VISITOR_BUILDER, false)
     }
 
 
     public
-    static void inject(File combindJar, File outJar, File androidJar, IncrementalVisitor.VisitorBuilder builder, boolean isHotfix) {
+    static void inject(File combindJar, File outJar, ArrayList<File> classPath, IncrementalVisitor.VisitorBuilder builder, boolean isHotfix) {
         ZipFile zipFile = new ZipFile(combindJar)
         List<URL> classPathList = new ArrayList<>()
         classPathList.add(combindJar.toURI().toURL())
-        classPathList.add(androidJar.toURI().toURL())
+        classPath.each { cp->
+            classPathList.add(cp.toURI().toURL())
+        }
         URL[] classPathAarray = Iterables.toArray(classPathList, URL.class)
         ClassLoader classesToInstrumentLoader = new URLClassLoader(classPathAarray) {
             @Override
@@ -96,8 +98,8 @@ class InstantFixWrapper {
         }
     }
 
-    public static void hotfix(File combindJar, File instrumentJar, File androidJar) {
-        inject(combindJar, instrumentJar, androidJar, IncrementalChangeVisitor.VISITOR_BUILDER, true)
+    public static void hotfix(File combindJar, File instrumentJar, ArrayList<File> classPathList) {
+        inject(combindJar, instrumentJar, classPathList, IncrementalChangeVisitor.VISITOR_BUILDER, true)
 
     }
 

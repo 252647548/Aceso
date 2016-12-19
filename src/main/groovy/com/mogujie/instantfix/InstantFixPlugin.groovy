@@ -100,7 +100,9 @@ class InstantFixPlugin implements Plugin<Project> {
         }
 
         Log.i "start inject "
-        InstantFixWrapper.instrument(combindJar, instrumentJar, androidJar)
+        ArrayList<File>classPath=new ArrayList<>()
+        classPath.add(androidJar)
+        InstantFixWrapper.instrument(combindJar, instrumentJar, classPath)
 
         //backup origin jar and overlay origin jar
         File classBackupDir = new File(project.buildDir, "intermediates/jar-backup")
@@ -128,7 +130,11 @@ class InstantFixPlugin implements Plugin<Project> {
             });
             jarMerger.addFolder(classTask.destinationDir)
             jarMerger.close()
-            InstantFixWrapper.hotfix(tempJarFile, jarFile, new File(InstantUtil.getAndroidSdkPath(project)))
+            ArrayList<File> classPath=new ArrayList()
+            classPath.add(new File(InstantUtil.getAndroidSdkPath(project)))
+            classPath.addAll(classTask.classpath.files)
+
+            InstantFixWrapper.hotfix(tempJarFile, jarFile,classPath )
             Utils.clearDir(classTask.destinationDir)
             project.copy {
                 from project.zipTree(jarFile)
@@ -163,6 +169,13 @@ class InstantFixPlugin implements Plugin<Project> {
                 if (name.endsWith("BuildConfig.class") || name ==~ MATCHER_R) {
                     return false
                 }
+                if(name.startsWith("com/mogujie/")||name.startsWith("com/mogu/")||name.startsWith("com/xiaodian/")
+                        ||name.startsWith("com/minicooper/")){
+return true
+                }else{
+                    return false
+                }
+
                 Log.i("filter accept => " + name)
                 if (name.startsWith("com/xiaomi/")
                         || name.startsWith("org/apache/")
