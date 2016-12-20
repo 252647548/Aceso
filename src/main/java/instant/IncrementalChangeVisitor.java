@@ -196,19 +196,19 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
         access = Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC;
         MethodNode method = getMethodByNameInClass(name, desc, classNode);
         if (name.equals("<init>")) {
-            Constructor constructor = ConstructorBuilder.build(visitedClassName, method);
-
-            MethodVisitor original = super.visitMethod(access, constructor.args.name, constructor.args.desc, constructor.args.signature, exceptions);
-            ISVisitor mv = new ISVisitor(original, access, constructor.args.name, constructor.args.desc, isStatic, true /* isConstructor */);
-            constructor.args.accept(mv);
-
-            original = super.visitMethod(access, constructor.body.name, constructor.body.desc, constructor.body.signature, exceptions);
-            mv = new ISVisitor(original, access, constructor.body.name, newDesc, isStatic, true /* isConstructor */);
-            constructor.body.accept(mv);
-
-            // Remember our created methods so we can generated the access$dispatch for them.
-            addedMethods.add(constructor.args);
-            addedMethods.add(constructor.body);
+//            Constructor constructor = ConstructorBuilder.build(visitedClassName, method);
+//
+//            MethodVisitor original = super.visitMethod(access, constructor.args.name, constructor.args.desc, constructor.args.signature, exceptions);
+//            ISVisitor mv = new ISVisitor(original, access, constructor.args.name, constructor.args.desc, isStatic, true /* isConstructor */);
+//            constructor.args.accept(mv);
+//
+//            original = super.visitMethod(access, constructor.body.name, constructor.body.desc, constructor.body.signature, exceptions);
+//            mv = new ISVisitor(original, access, constructor.body.name, newDesc, isStatic, true /* isConstructor */);
+//            constructor.body.accept(mv);
+//
+//            // Remember our created methods so we can generated the access$dispatch for them.
+//            addedMethods.add(constructor.args);
+//            addedMethods.add(constructor.body);
             return null;
         } else {
             String newName = isStatic ? computeOverrideMethodName(name, desc) : name;

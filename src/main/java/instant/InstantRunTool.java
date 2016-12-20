@@ -39,11 +39,12 @@ public class InstantRunTool {
             mv = cw.visitMethod(Opcodes.ACC_PUBLIC,
                     "getPatchedClasses", "()[Ljava/lang/String;", null, null);
             mv.visitCode();
-            mv.visitIntInsn(Opcodes.BIPUSH, patchFileContents.size());
+
+            mv.visitIntInsn(Opcodes.SIPUSH, patchFileContents.size());
             mv.visitTypeInsn(Opcodes.ANEWARRAY, "java/lang/String");
             for (int index = 0; index < patchFileContents.size(); index++) {
                 mv.visitInsn(Opcodes.DUP);
-                mv.visitIntInsn(Opcodes.BIPUSH, index);
+                mv.visitIntInsn(Opcodes.SIPUSH, index);
                 mv.visitLdcInsn(patchFileContents.get(index));
                 mv.visitInsn(Opcodes.AASTORE);
             }

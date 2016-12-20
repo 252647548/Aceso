@@ -65,9 +65,6 @@ class InstantFixWrapper {
 
             zipFile.entries().each { entry ->
                 String entryName = entry.name
-
-
-
                 if (!isHotfix) {
                     if (support(entryName)) {
                         count++;
