@@ -153,6 +153,7 @@ class InstantFixPlugin implements Plugin<Project> {
             if (jarMergingTask.name.startsWith("transformClassesAndResourcesWithProguardFor")) {
                 proguardMap = getProguardMap(jarMergingTask.transform.getMappingFile())
                 Log.i("get proguard map, size: " + proguardMap.size())
+                proguardMap.each { key, value -> Log.i(key + "<>" + value) }
             }
 
             File combindJar = getCombindJar(jarMergingTask, varName)
@@ -195,7 +196,7 @@ class InstantFixPlugin implements Plugin<Project> {
                     // Extract the elements.
                     String className = line.substring(0, arrowIndex).trim();
                     String newClassName = line.substring(arrowIndex + 2, colonIndex).trim();
-                    proguardMap.put(className, newClassName)
+                    proguardMap.put(newClassName.replace(".", "/")+".class", className.replace(".", "/")+".class")
 
                 }
 

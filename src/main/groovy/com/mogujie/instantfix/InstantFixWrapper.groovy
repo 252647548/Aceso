@@ -110,29 +110,12 @@ class InstantFixWrapper {
     static boolean isNewClass(String entryName, ArrayList<File> classPath, HashMap<String, String> proguardMap) {
         boolean isNewClass = true
         classPath.each { path ->
-            if (path.isDirectory()) {
-                path.eachFileRecurse { file ->
-                    String realName = file.absolutePath
-                    if (proguardMap != null) {
-                        String temp = proguardMap.get(realName)
-                        if (temp != null) {
-                            realName = temp
-                        }
-                    }
-                    if (realName.contains(entryName)) {
-                        isNewClass = false
-                    }
-                }
-            } else if (path.isFile() && (path.name.endsWith(".jar") || path.name.endsWith(".zip"))) {
-                new ZipFile(path).entries().each { entry ->
-                    String realName = entry.name
-                    if (proguardMap != null) {
-                        String temp = proguardMap.get(realName)
-                        if (temp != null) {
-                            realName = temp
-                        }
-                    }
-                    if (realName.contains(entryName)) {
+            if (path.isFile() && (path.name.endsWith(".jar") || path.name.endsWith(".zip"))) {
+                ZipFile classJar = new ZipFile(path)
+                if (proguardMap != null) {
+                    //获得混淆之前的类名
+                    String realName = proguardMap.get(entryName)
+                    if (realName != null && classJar.getEntry(realName) != null) {
                         isNewClass = false
                     }
                 }

@@ -74,6 +74,7 @@ public class IncrementalVisitor extends ClassVisitor {
     protected static final boolean TRACING_ENABLED = Boolean.getBoolean("FDR_TRACING");
 
     public static final Type CHANGE_TYPE = Type.getObjectType(PACKAGE + "/IncrementalChange");
+    public static final Type MTD_SET_TYPE = Type.getObjectType( "java/util/HashSet");
 
     protected String visitedClassName;
     protected String visitedSuperName;
@@ -382,16 +383,16 @@ public class IncrementalVisitor extends ClassVisitor {
         List<ClassNode> parentsNodes = parseParents(zipFile, classNode);
 
         // if we could not determine the parent hierarchy, disable instant run.
-        if (parentsNodes.isEmpty() || false) {
-            if (visitorBuilder.getOutputType() == OutputType.INSTRUMENT) {
-                zos.putNextEntry(nowEntry);
-                zos.write(classBytes);
-                zos.closeEntry();
-                return true;
-            } else {
-                return false;
-            }
-        }
+//        if (parentsNodes.isEmpty() && !isHotfix) {
+//            if (visitorBuilder.getOutputType() == OutputType.INSTRUMENT) {
+//                zos.putNextEntry(nowEntry);
+//                zos.write(classBytes);
+//                zos.closeEntry();
+//                return true;
+//            } else {
+//                return false;
+//            }
+//        }
 
 
         IncrementalVisitor visitor = visitorBuilder.build(classNode, parentsNodes, classWriter);
