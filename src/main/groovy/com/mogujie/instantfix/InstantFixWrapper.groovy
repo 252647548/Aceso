@@ -109,16 +109,19 @@ class InstantFixWrapper {
     private
     static boolean isNewClass(String entryName, ArrayList<File> classPath, HashMap<String, String> proguardMap) {
         boolean isNewClass = true
+        if (proguardMap == null) {
+            return false
+        }
         classPath.each { path ->
             if (path.isFile() && (path.name.endsWith(".jar") || path.name.endsWith(".zip"))) {
                 ZipFile classJar = new ZipFile(path)
-                if (proguardMap != null) {
-                    //获得混淆之前的类名
-                    String realName = proguardMap.get(entryName)
-                    if (realName != null && classJar.getEntry(realName) != null) {
-                        isNewClass = false
-                    }
+
+                //获得混淆之前的类名
+                String realName = proguardMap.get(entryName)
+                if (realName != null && classJar.getEntry(realName) != null) {
+                    isNewClass = false
                 }
+
             } else {
                 throw new GradleException("unknown class path type " + path)
             }
