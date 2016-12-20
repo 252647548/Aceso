@@ -217,7 +217,9 @@ class InstantFixPlugin implements Plugin<Project> {
                     return false
                 }
                 if (name.startsWith("com/mogujie/") || name.startsWith("com/mogu/") || name.startsWith("com/xiaodian/")
-                        || name.startsWith("com/minicooper/")) {
+                        || name.startsWith("com/minicooper/")||name.startsWith("com/squareup/picasso")
+                        ||name.startsWith("com/nineold/animation")
+                        ||name.startsWith("com/astonmartin/image")||name.startsWith("com/caches")) {
                     return true
                 } else {
                     return false
