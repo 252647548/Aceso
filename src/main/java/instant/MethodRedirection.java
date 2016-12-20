@@ -16,9 +16,6 @@
 
 package instant;
 
-import com.mogujie.groovy.util.Log;
-import org.objectweb.asm.Label;
-import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.GeneratorAdapter;
 import org.objectweb.asm.commons.Method;
@@ -34,60 +31,20 @@ public class MethodRedirection extends Redirection {
     @NonNull
     private final String name;
 
-    @NonNull
-    private String mtdName;
-    private String mtdDesc;
-
-//    MethodNode method;
-
-
-    String visitedClassName;
-
-    MethodRedirection(@NonNull LabelNode label, @NonNull String name, @NonNull List<Type> types,
-                      @NonNull Type type, String visitedClassName, String mtdName, String mtdDesc) {
-        super(label, types, type);
+    MethodRedirection(@NonNull LabelNode label, @NonNull String name, @NonNull List<Type> types, @NonNull Type type) {
+        super(label,name, types, type);
         this.name = name;
-        this.mtdDesc = mtdDesc;
-        this.mtdName = mtdName;
-        this.visitedClassName = visitedClassName;
     }
 
-    @Override
-    protected void redirect(GeneratorAdapter mv, int change) {
-        // code to check if a new implementation of the current class is available.
-        Label l0 = new Label();
-
-        String mtdSetTypeDesc = IncrementalVisitor.getRuntimeTypeName(IncrementalVisitor.MTD_SET_TYPE);
-        Log.i("redirect: " + visitedClassName + " " + mtdSetTypeDesc + "  " + mtdName + "  " + mtdDesc + "  " + name);
-        mv.visitFieldInsn(Opcodes.GETSTATIC, visitedClassName, "$mtdSet",
-                mtdSetTypeDesc);
-        mv.visitLdcInsn(name);
-        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, mtdSetTypeDesc, mtdName, mtdDesc, false);
-        mv.visitJumpInsn(Opcodes.IFEQ, l0);
-
-        mv.loadLocal(change);
-        mv.visitJumpInsn(Opcodes.IFNULL, l0);
-
-
-        doRedirect(mv, change);
-
-        // Return
-        if (type == Type.VOID_TYPE) {
-            mv.pop();
-        } else {
-            ByteCodeUtils.unbox(mv, type);
-        }
-        mv.returnValue();
-
-        // jump label for classes without any new implementation, just invoke the original
-        // method implementation.
-        mv.visitLabel(l0);
-    }
 
     @Override
     protected void doRedirect(@NonNull GeneratorAdapter mv, int change) {
         // Push the three arguments
         mv.loadLocal(change);
+        mv.push(name);
+        mv.invokeVirtual(IncrementalVisitor.MTD_MAP_TYPE, Method.getMethod("Object get(Object)"));
+
+//        mv.loadLocal(change);
         mv.push(name);
         ByteCodeUtils.newVariableArray(mv, ByteCodeUtils.toLocalVariables(types));
 

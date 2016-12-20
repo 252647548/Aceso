@@ -109,10 +109,7 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
 //        addSerialUidIfMissing();
         super.visitField(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC
                         | Opcodes.ACC_VOLATILE | Opcodes.ACC_SYNTHETIC | Opcodes.ACC_TRANSIENT,
-                "$change", getRuntimeTypeName(CHANGE_TYPE), null, null);
-        super.visitField(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC
-                        | Opcodes.ACC_VOLATILE | Opcodes.ACC_SYNTHETIC | Opcodes.ACC_TRANSIENT,
-                "$mtdSet", getRuntimeTypeName(MTD_SET_TYPE), null, null);
+                "$change", getRuntimeTypeName(MTD_MAP_TYPE), null, null);
         access = transformClassAccessForInstantRun(access);
         super.visit(version, access, name, signature, superName, interfaces);
     }
@@ -188,7 +185,7 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
                         new LabelNode(mv.getStartLabel()),
                         name + "." + desc,
                         args,
-                        Type.getReturnType(desc),visitedClassName,name,desc));
+                        Type.getReturnType(desc)));
             }
             method.accept(mv);
             return null;
@@ -292,9 +289,9 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
                 }
 
                 super.visitLabel(start);
-                change = newLocal(CHANGE_TYPE);
+                change = newLocal(MTD_MAP_TYPE);
                 visitFieldInsn(Opcodes.GETSTATIC, visitedClassName, "$change",
-                        getRuntimeTypeName(CHANGE_TYPE));
+                        getRuntimeTypeName(MTD_MAP_TYPE));
                 storeLocal(change);
 
                 redirectAt(start);
@@ -460,103 +457,8 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
         mv.visitEnd();
     }
 
-    /***
-     * Inserts a trampoline to this class so that the updated methods can make calls to
-     * constructors.
-     * <p/>
-     * <p/>
-     * Pseudo code for this trampoline:
-     * <code>
-     * ClassName(Object[] args, Marker unused) {
-     * String name = (String) args[0];
-     * if (name.equals(
-     * "java/lang/ClassName.(Ljava/lang/String;Ljava/lang/Object;)Ljava/lang/Object;")) {
-     * this((String)arg[1], arg[2]);
-     * return
-     * }
-     * if (name.equals("SuperClassName.(Ljava/lang/String;I)V")) {
-     * super((String)arg[1], (int)arg[2]);
-     * return;
-     * }
-     * ...
-     * StringBuilder $local1 = new StringBuilder();
-     * $local1.append("Method not found ");
-     * $local1.append(name);
-     * $local1.append(" in " $classType $super implementation");
-     * throw new $package/InstantReloadException($local1.toString());
-     * }
-     * </code>
-     */
-    private void createDispatchingThis() {
-        // Gather all methods from itself and its superclasses to generate a giant constructor
-        // implementation.
-        // This will work fine as long as we don't support adding constructors to classes.
-        final Map<String, MethodNode> uniqueMethods = new HashMap();
 
-        addAllNewConstructors(uniqueMethods, classNode, true /*keepPrivateConstructors*/);
-        for (ClassNode parentNode : parentNodes) {
-            addAllNewConstructors(uniqueMethods, parentNode, false /*keepPrivateConstructors*/);
-        }
 
-        int access = Opcodes.ACC_PUBLIC | Opcodes.ACC_SYNTHETIC;
-
-        Method m = new Method(ByteCodeUtils.CONSTRUCTOR,
-                ConstructorRedirection.DISPATCHING_THIS_SIGNATURE);
-        MethodVisitor visitor = super.visitMethod(0, m.getName(), m.getDescriptor(), null, null);
-        final GeneratorAdapter mv = new GeneratorAdapter(access, m, visitor);
-
-        mv.visitCode();
-        // Mark this code as redirection code
-        Label label = new Label();
-        mv.visitLineNumber(0, label);
-
-        // Get and store the constructor canonical name.
-        mv.visitVarInsn(Opcodes.ALOAD, 1);
-        mv.push(1);
-        mv.visitInsn(Opcodes.AALOAD);
-        mv.unbox(Type.getType("Ljava/lang/String;"));
-        final int constructorCanonicalName = mv.newLocal(Type.getType("Ljava/lang/String;"));
-        mv.storeLocal(constructorCanonicalName);
-
-        new StringSwitch() {
-
-            @Override
-            void visitString() {
-                mv.loadLocal(constructorCanonicalName);
-            }
-
-            @Override
-            void visitCase(String canonicalName) {
-                MethodNode methodNode = uniqueMethods.get(canonicalName);
-                String owner = canonicalName.split("\\.")[0];
-
-                // Parse method arguments and
-                mv.visitVarInsn(Opcodes.ALOAD, 0);
-                Type[] args = Type.getArgumentTypes(methodNode.desc);
-                int argc = 1;
-                for (Type t : args) {
-                    mv.visitVarInsn(Opcodes.ALOAD, 1);
-                    mv.push(argc + 1);
-                    mv.visitInsn(Opcodes.AALOAD);
-                    ByteCodeUtils.unbox(mv, t);
-                    argc++;
-                }
-
-                mv.visitMethodInsn(Opcodes.INVOKESPECIAL, owner, ByteCodeUtils.CONSTRUCTOR,
-                        methodNode.desc, false);
-
-                mv.visitInsn(Opcodes.RETURN);
-            }
-
-            @Override
-            void visitDefault() {
-                writeMissingMessageWithHash(mv, visitedClassName);
-            }
-        }.visit(mv, uniqueMethods.keySet());
-
-        mv.visitMaxs(1, 3);
-        mv.visitEnd();
-    }
 
     @Override
     public void visitEnd() {
