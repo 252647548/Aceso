@@ -117,7 +117,7 @@ public class IncrementalVisitor extends ClassVisitor {
     }
 
     @NonNull
-    protected static String getRuntimeTypeName(@NonNull Type type) {
+    public static String getRuntimeTypeName(@NonNull Type type) {
         return "L" + type.getInternalName() + ";";
     }
 

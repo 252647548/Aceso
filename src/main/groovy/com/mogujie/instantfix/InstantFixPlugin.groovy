@@ -196,7 +196,7 @@ class InstantFixPlugin implements Plugin<Project> {
                     // Extract the elements.
                     String className = line.substring(0, arrowIndex).trim();
                     String newClassName = line.substring(arrowIndex + 2, colonIndex).trim();
-                    proguardMap.put(newClassName.replace(".", "/")+".class", className.replace(".", "/")+".class")
+                    proguardMap.put(newClassName.replace(".", "/") + ".class", className.replace(".", "/") + ".class")
 
                 }
 
@@ -217,9 +217,9 @@ class InstantFixPlugin implements Plugin<Project> {
                     return false
                 }
                 if (name.startsWith("com/mogujie/") || name.startsWith("com/mogu/") || name.startsWith("com/xiaodian/")
-                        || name.startsWith("com/minicooper/")||name.startsWith("com/squareup/picasso")
-                        ||name.startsWith("com/nineold/animation")
-                        ||name.startsWith("com/astonmartin/image")||name.startsWith("com/caches")) {
+                        || name.startsWith("com/minicooper/") || name.startsWith("com/squareup/picasso")
+                        || name.startsWith("com/nineold/animation")
+                        || name.startsWith("com/astonmartin/image") || name.startsWith("com/caches") || name.startsWith("com/facebook")) {
                     return true
                 } else {
                     return false

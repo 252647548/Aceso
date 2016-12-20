@@ -67,7 +67,7 @@ public abstract class Redirection {
      * @param mv the method visitor to add the instructions to.
      * @param change the local variable containing the alternate implementation.
      */
-    void redirect(GeneratorAdapter mv, int change) {
+    protected void redirect(GeneratorAdapter mv, int change) {
         // code to check if a new implementation of the current class is available.
         Label l0 = new Label();
         mv.loadLocal(change);

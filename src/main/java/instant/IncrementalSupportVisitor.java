@@ -110,6 +110,9 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
         super.visitField(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC
                         | Opcodes.ACC_VOLATILE | Opcodes.ACC_SYNTHETIC | Opcodes.ACC_TRANSIENT,
                 "$change", getRuntimeTypeName(CHANGE_TYPE), null, null);
+        super.visitField(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC
+                        | Opcodes.ACC_VOLATILE | Opcodes.ACC_SYNTHETIC | Opcodes.ACC_TRANSIENT,
+                "$mtdSet", getRuntimeTypeName(MTD_SET_TYPE), null, null);
         access = transformClassAccessForInstantRun(access);
         super.visit(version, access, name, signature, superName, interfaces);
     }
@@ -185,7 +188,7 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
                         new LabelNode(mv.getStartLabel()),
                         name + "." + desc,
                         args,
-                        Type.getReturnType(desc)));
+                        Type.getReturnType(desc),visitedClassName,name,desc));
             }
             method.accept(mv);
             return null;
