@@ -44,9 +44,9 @@ class InstantFixPlugin implements Plugin<Project> {
 
         def jarMergingTask = findJarMergingTask(project, varName)
 
-        project.tasks.create("hotfix" + varName, HotFixTask, new HotFixTask.HotFixAction(varName))
+        project.tasks.create("instantFix" + varName, HotFixTask, new HotFixTask.HotFixAction(varName))
 
-        isHotfix = InstantUtil.isHotFix(project)
+        isHotfix = InstantUtil.isInstantFix(project)
 
         if (isHotfix) {
             Log.i "is hotfix "
@@ -64,8 +64,9 @@ class InstantFixPlugin implements Plugin<Project> {
                 try {
                     throw new GradleException("jarMergingTask is null!")
                 } catch (Exception e) {
-                    Log.e("can not found jarMergingTask. we will not instrument code!")
+                    Log.e("can not found jarMergingTask. we will not instrument code! for var " + varName)
                     if (!config.ignoreWarning) {
+                        Log.e("ignoreWarning is " + config.ignoreWarning)
                         throw e
                     }
                 }
@@ -100,7 +101,7 @@ class InstantFixPlugin implements Plugin<Project> {
         }
 
         Log.i "start inject "
-        ArrayList<File>classPath=new ArrayList<>()
+        ArrayList<File> classPath = new ArrayList<>()
         classPath.add(androidJar)
         InstantFixWrapper.instrument(combindJar, instrumentJar, classPath)
 
@@ -130,11 +131,11 @@ class InstantFixPlugin implements Plugin<Project> {
             });
             jarMerger.addFolder(classTask.destinationDir)
             jarMerger.close()
-            ArrayList<File> classPath=new ArrayList()
+            ArrayList<File> classPath = new ArrayList()
             classPath.add(new File(InstantUtil.getAndroidSdkPath(project)))
             classPath.addAll(classTask.classpath.files)
 
-            InstantFixWrapper.hotfix(tempJarFile, jarFile,classPath )
+            InstantFixWrapper.instantFix(tempJarFile, jarFile, classPath, null)
             Utils.clearDir(classTask.destinationDir)
             project.copy {
                 from project.zipTree(jarFile)
@@ -144,20 +145,65 @@ class InstantFixPlugin implements Plugin<Project> {
     }
 
     private void doPatchWhenJarExists(def jarMergingTask, String varName) {
+        AndroidJavaCompile classTask = project.tasks.findByName("compile${varName}JavaWithJavac")
         jarMergingTask.outputs.upToDateWhen { return false }
         jarMergingTask.doLast {
+//            jarMergingTask=jarMergingTask as dE
+            HashMap<String, String> proguardMap = null
+            if (jarMergingTask.name.startsWith("transformClassesAndResourcesWithProguardFor")) {
+                proguardMap = getProguardMap(jarMergingTask.transform.getMappingFile())
+                Log.i("get proguard map, size: " + proguardMap.size())
+            }
+
             File combindJar = getCombindJar(jarMergingTask, varName)
             Log.i "combindJar is " + combindJar
             File combindBackupJar = InstantUtil.initFile(project.buildDir, "intermediates/jar-backup/" + combindJar.name)
 
             File fixJar = InstantUtil.initFile(project.buildDir, "intermediates/jar-hotfix/" + combindJar.name)
-            InstantFixWrapper.hotfix(combindJar, fixJar, new File(InstantUtil.getAndroidSdkPath(project)))
+            ArrayList<File> classPath = new ArrayList()
+            classPath.addAll(classTask.classpath.files)
+            classPath.add(new File(InstantUtil.getAndroidSdkPath(project)))
+            InstantFixWrapper.instantFix(combindJar, fixJar, classPath, proguardMap)
 
             InstantUtil.copy(project, combindJar, combindBackupJar.parentFile)
 
             InstantUtil.copy(project, fixJar, combindJar.parentFile)
         }
     }
+
+    public HashMap<String, String> getProguardMap(File mappingFile) {
+        HashMap<String, String> proguardMap = new HashMap<>()
+        mappingFile.readLines().each { line ->
+            line = line.trim();
+
+            // Is it a non-comment line?
+            if (!line.startsWith("#")) {
+                // Is it a class mapping or a class member mapping?
+                if (line.endsWith(":")) {
+
+
+                    int arrowIndex = line.indexOf("->");
+                    if (arrowIndex < 0) {
+                        return null;
+                    }
+
+                    int colonIndex = line.indexOf(':', arrowIndex + 2);
+                    if (colonIndex < 0) {
+                        return null;
+                    }
+
+                    // Extract the elements.
+                    String className = line.substring(0, arrowIndex).trim();
+                    String newClassName = line.substring(arrowIndex + 2, colonIndex).trim();
+                    proguardMap.put(className, newClassName)
+
+                }
+
+            }
+        }
+        return proguardMap
+    }
+
 
     public InstantFixWrapper.InstrumentFilter initFilter() {
         return new InstantFixWrapper.InstrumentFilter() {
@@ -169,10 +215,10 @@ class InstantFixPlugin implements Plugin<Project> {
                 if (name.endsWith("BuildConfig.class") || name ==~ MATCHER_R) {
                     return false
                 }
-                if(name.startsWith("com/mogujie/")||name.startsWith("com/mogu/")||name.startsWith("com/xiaodian/")
-                        ||name.startsWith("com/minicooper/")){
-return true
-                }else{
+                if (name.startsWith("com/mogujie/") || name.startsWith("com/mogu/") || name.startsWith("com/xiaodian/")
+                        || name.startsWith("com/minicooper/")) {
+                    return true
+                } else {
                     return false
                 }
 

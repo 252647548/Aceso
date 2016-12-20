@@ -169,17 +169,17 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
 
             ISMethodVisitor mv = new ISMethodVisitor(defaultVisitor, access, name, desc);
             if (name.equals(ByteCodeUtils.CONSTRUCTOR)) {
-                Constructor constructor = ConstructorBuilder.build(visitedClassName, method);
-                LabelNode start = new LabelNode();
-                method.instructions.insert(constructor.loadThis, start);
-                if (constructor.lineForLoad != -1) {
-                    // Record the line number from the start of LOAD_0 for uninitialized 'this'.
-                    // This allows a breakpoint to be set at the line with this(...) or super(...)
-                    // call in the constructor.
-                    method.instructions.insert(constructor.loadThis,
-                            new LineNumberNode(constructor.lineForLoad, start));
-                }
-                mv.addRedirection(new ConstructorRedirection(start, constructor, args));
+//                Constructor constructor = ConstructorBuilder.build(visitedClassName, method);
+//                LabelNode start = new LabelNode();
+//                method.instructions.insert(constructor.loadThis, start);
+//                if (constructor.lineForLoad != -1) {
+//                    // Record the line number from the start of LOAD_0 for uninitialized 'this'.
+//                    // This allows a breakpoint to be set at the line with this(...) or super(...)
+//                    // call in the constructor.
+//                    method.instructions.insert(constructor.loadThis,
+//                            new LineNumberNode(constructor.lineForLoad, start));
+//                }
+//                mv.addRedirection(new ConstructorRedirection(start, constructor, args));
             } else {
                 mv.addRedirection(new MethodRedirection(
                         new LabelNode(mv.getStartLabel()),
@@ -558,7 +558,7 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
     @Override
     public void visitEnd() {
 //        createAccessSuper();
-        createDispatchingThis();
+//        createDispatchingThis();
         super.visitEnd();
     }
 

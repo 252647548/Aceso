@@ -37,10 +37,10 @@ class InstantUtil {
         return apk
     }
 
-    public static boolean isHotFix(Project project) {
+    public static boolean isInstantFix(Project project) {
         return project.gradle.getStartParameter().taskNames.any { taskName ->
             Log.i "task " + taskName
-            if (taskName.startsWith("hotfix")) {
+            if (taskName.startsWith("instantFix")) {
                 return true
             }
         }
