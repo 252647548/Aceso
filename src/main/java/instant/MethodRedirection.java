@@ -31,9 +31,9 @@ public class MethodRedirection extends Redirection {
     @NonNull
     private final String name;
 
-    MethodRedirection(@NonNull LabelNode label, @NonNull String name, @NonNull List<Type> types, @NonNull Type type) {
-        super(label,name, types, type);
-        this.name = name;
+    MethodRedirection(@NonNull LabelNode label,String visitedClassName, String mtdName, String mtdDesc, @NonNull List<Type> types, @NonNull Type type,boolean isStatic) {
+        super(label,visitedClassName, mtdName, mtdDesc, types, type,isStatic);
+        this.name = mtdName + "." + mtdDesc;
     }
 
 
@@ -41,7 +41,7 @@ public class MethodRedirection extends Redirection {
     protected void doRedirect(@NonNull GeneratorAdapter mv, int change) {
         // Push the three arguments
         mv.loadLocal(change);
-        mv.push(name);
+        mv.push(mtdName+"."+newMtdDesc);
         mv.invokeVirtual(IncrementalVisitor.MTD_MAP_TYPE, Method.getMethod("Object get(Object)"));
 
 //        mv.loadLocal(change);

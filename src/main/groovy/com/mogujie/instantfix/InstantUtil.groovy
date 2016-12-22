@@ -40,7 +40,7 @@ class InstantUtil {
     public static boolean isInstantFix(Project project) {
         return project.gradle.getStartParameter().taskNames.any { taskName ->
             Log.i "task " + taskName
-            if (taskName.startsWith("instantFix")) {
+            if (taskName.toLowerCase().startsWith("instantfix")) {
                 return true
             }
         }

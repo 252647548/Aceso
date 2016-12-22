@@ -47,14 +47,26 @@ public abstract class Redirection {
      */
     public final Type type;
 
-    @NonNull
-    private final String name;
+    protected final String mtdName;
 
-    Redirection(@NonNull LabelNode label, @NonNull String name, @NonNull List<Type> types, @NonNull Type type) {
+    protected final String mtdDesc;
+
+    protected final String visitedClassName;
+
+    protected final boolean isStatic;
+
+    protected final String newMtdDesc;
+
+    Redirection(@NonNull LabelNode label, String visitedClassName, @NonNull String mtdName, @NonNull String mtdDesc, @NonNull List<Type> types, @NonNull Type type, boolean isStatic) {
         this.label = label;
         this.types = types;
         this.type = type;
-        this.name = name;
+        this.visitedClassName = visitedClassName;
+        this.mtdName = mtdName;
+        this.mtdDesc = mtdDesc;
+        this.isStatic = isStatic;
+        newMtdDesc = isStatic ? mtdDesc : ("(L" + visitedClassName + ";" + mtdDesc.substring(1));
+
     }
 
     /**
@@ -79,7 +91,8 @@ public abstract class Redirection {
         mv.loadLocal(change);
         mv.visitJumpInsn(Opcodes.IFNULL, l0);
         mv.loadLocal(change);
-        mv.visitLdcInsn(name);
+
+        mv.visitLdcInsn(mtdName + "." + newMtdDesc);
         mv.invokeVirtual(IncrementalVisitor.MTD_MAP_TYPE, Method.getMethod("Object get(Object)"));
         mv.visitJumpInsn(Opcodes.IFNULL, l0);
         doRedirect(mv, change);

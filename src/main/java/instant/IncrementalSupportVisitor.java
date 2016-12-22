@@ -20,7 +20,10 @@ package instant;
 import org.objectweb.asm.*;
 import org.objectweb.asm.commons.GeneratorAdapter;
 import org.objectweb.asm.commons.Method;
-import org.objectweb.asm.tree.*;
+import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.tree.FieldNode;
+import org.objectweb.asm.tree.LabelNode;
+import org.objectweb.asm.tree.MethodNode;
 
 import java.io.IOException;
 import java.io.ObjectStreamClass;
@@ -76,7 +79,6 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
 
     @NonNull
     public static final IncrementalVisitor.VisitorBuilder VISITOR_BUILDER = new VisitorBuilder();
-
 
 
     public IncrementalSupportVisitor(
@@ -183,9 +185,11 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
             } else {
                 mv.addRedirection(new MethodRedirection(
                         new LabelNode(mv.getStartLabel()),
-                        name + "." + desc,
+                        visitedClassName,
+                        name,
+                        desc,
                         args,
-                        Type.getReturnType(desc)));
+                        Type.getReturnType(desc),isStatic));
             }
             method.accept(mv);
             return null;
@@ -456,8 +460,6 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
         mv.visitMaxs(0, 0);
         mv.visitEnd();
     }
-
-
 
 
     @Override
