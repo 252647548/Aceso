@@ -25,10 +25,7 @@ import org.objectweb.asm.tree.FieldNode;
 import org.objectweb.asm.tree.MethodNode;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Visitor for classes that have been changed since the initial push.
@@ -89,11 +86,21 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
         NORMAL, AFTER_NEW
     }
 
+    HashSet<String> priNativeMtdSet = new HashSet<>();
+
     public IncrementalChangeVisitor(
             @NonNull ClassNode classNode,
             @NonNull List<ClassNode> parentNodes,
             @NonNull ClassVisitor classVisitor) {
         super(classNode, parentNodes, classVisitor);
+
+        for (MethodNode methodNode : classNode.methods) {
+            if ((methodNode.access & (Opcodes.ACC_NATIVE | Opcodes.ACC_PRIVATE)) == (Opcodes.ACC_NATIVE | Opcodes.ACC_PRIVATE)) {
+                priNativeMtdSet.add(methodNode.name + "." + methodNode.desc);
+                System.out.println("find private native mtd : " + methodNode.name + "." + methodNode.desc);
+            }
+        }
+
     }
 
     /**
@@ -114,6 +121,7 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
         if (DEBUG) {
             System.out.println(">>>>>>>> Processing " + name + "<<<<<<<<<<<<<");
         }
+
 
         visitedClassName = name;
         visitedSuperName = superName;
@@ -529,10 +537,26 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
                     System.out.println(
                             "Private Method : " + name + ":" + desc + ":" + itf + ":" + isStatic);
                 }
-                // private method dispatch, just invoke the $override class static method.
-                String newDesc = computeOverrideMethodDesc(desc, false /*isStatic*/);
-                super.visitMethodInsn(Opcodes.INVOKESTATIC, owner + "$override", name, newDesc, itf);
-                return true;
+                if(priNativeMtdSet.contains(name+"."+desc)){
+                    pushMethodRedirectArgumentsOnStack(name, desc);
+
+                    // Stack : <receiver>
+                    //      <array of parameter_values>
+                    //      <array of parameter_types>
+                    //      <method_name>
+                    invokeStatic(RUNTIME_TYPE, Method.getMethod(
+                            "Object invokeProtectedMethod(Object, Object[], Class[], String)"));
+                    // Stack : <return value or null if no return value>
+                    handleReturnType(desc);
+                    return true;
+                }else{
+                    // private method dispatch, just invoke the $override class static method.
+                    String newDesc = computeOverrideMethodDesc(desc, false /*isStatic*/);
+                    super.visitMethodInsn(Opcodes.INVOKESTATIC, owner + "$override", name, newDesc, itf);
+                    return true;
+                }
+
+
             } else {
                 if (DEBUG) {
                     System.out.println(

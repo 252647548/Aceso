@@ -74,7 +74,7 @@ public class IncrementalVisitor extends ClassVisitor {
     protected static final boolean TRACING_ENABLED = Boolean.getBoolean("FDR_TRACING");
 
     public static final Type CHANGE_TYPE = Type.getObjectType(PACKAGE + "/IncrementalChange");
-    public static final Type MTD_MAP_TYPE = Type.getObjectType( "java/util/HashMap");
+    public static final Type MTD_MAP_TYPE = Type.getObjectType("java/util/HashMap");
 
     protected String visitedClassName;
     protected String visitedSuperName;
