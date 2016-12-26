@@ -1,6 +1,7 @@
 package instant;
 
 import com.google.common.collect.ImmutableList;
+import org.gradle.api.GradleException;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
@@ -11,18 +12,18 @@ import org.objectweb.asm.Opcodes;
 public class InstantRunTool {
 
     public static byte[] getPatchFileContents(
-            @NonNull ImmutableList<String> patchFileContents, long buildId) {
-
+            @NonNull ImmutableList<String> patchFileContents, @NonNull ImmutableList<Integer> patchIndexContents) {
+if(patchFileContents.size()!=patchIndexContents.size()){
+    throw new GradleException("patchFileContents's size is "
+            +patchFileContents.size()+", but patchIndexContents's size is "
+            +patchIndexContents.size()+", please check the changed classes.");
+}
         ClassWriter cw = new ClassWriter(0);
         MethodVisitor mv;
 
         cw.visit(Opcodes.V1_6, Opcodes.ACC_PUBLIC + Opcodes.ACC_SUPER,
                 IncrementalVisitor.APP_PATCHES_LOADER_IMPL, null,
                 IncrementalVisitor.ABSTRACT_PATCHES_LOADER_IMPL, null);
-
-        // Add the build ID to force the patch file to be repackaged.
-        cw.visitField(Opcodes.ACC_PUBLIC + Opcodes.ACC_STATIC + Opcodes.ACC_FINAL,
-                "BUILD_ID", "J", null, buildId);
 
         {
             mv = cw.visitMethod(Opcodes.ACC_PUBLIC, "<init>", "()V", null, null);
@@ -52,9 +53,30 @@ public class InstantRunTool {
             mv.visitMaxs(4, 1);
             mv.visitEnd();
         }
+        {
+            mv = cw.visitMethod(Opcodes.ACC_PUBLIC,
+                    "getPatchedClassIndexes", "()[I", null, null);
+            mv.visitCode();
+
+            mv.visitIntInsn(Opcodes.SIPUSH, patchIndexContents.size());
+            mv.visitIntInsn(Opcodes.NEWARRAY, Opcodes.T_INT);
+            for (int index = 0; index < patchIndexContents.size(); index++) {
+                mv.visitInsn(Opcodes.DUP);
+                mv.visitIntInsn(Opcodes.SIPUSH, index);
+                mv.visitLdcInsn(patchIndexContents.get(index));
+                mv.visitInsn(Opcodes.IASTORE);
+            }
+            mv.visitInsn(Opcodes.ARETURN);
+            mv.visitMaxs(4, 1);
+            mv.visitEnd();
+        }
         cw.visitEnd();
 
         return cw.toByteArray();
 
+    }
+
+    public static String getMtdSig(String mtdName, String mtdDesc) {
+        return mtdName + "." + mtdDesc;
     }
 }

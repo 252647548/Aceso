@@ -20,7 +20,6 @@ import org.objectweb.asm.Label;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.GeneratorAdapter;
-import org.objectweb.asm.commons.Method;
 import org.objectweb.asm.tree.LabelNode;
 
 import java.util.List;
@@ -90,11 +89,13 @@ public abstract class Redirection {
         Label l0 = new Label();
         mv.loadLocal(change);
         mv.visitJumpInsn(Opcodes.IFNULL, l0);
-        mv.loadLocal(change);
-
-        mv.visitLdcInsn(mtdName + "." + newMtdDesc);
-        mv.invokeVirtual(IncrementalVisitor.MTD_MAP_TYPE, Method.getMethod("Object get(Object)"));
-        mv.visitJumpInsn(Opcodes.IFNULL, l0);
+//        mv.loadLocal(change);
+//        mv.push(InstantProguardMap.instance().getClassIndex());
+//        mv.push(InstantProguardMap.instance().getMtdIndex());
+//        mv.invokeStatic(IncrementalVisitor.MTD_MAP_TYPE, Method.getMethod("Object get(int,int)"));
+//        mv.visitVarInsn(Opcodes.ASTORE,1);
+//        mv.visitVarInsn(Opcodes.ALOAD,1);
+//        mv.visitJumpInsn(Opcodes.IFNULL, l0);
         doRedirect(mv, change);
 
         // Return

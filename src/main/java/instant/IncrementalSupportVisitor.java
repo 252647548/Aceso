@@ -45,6 +45,7 @@ import java.util.*;
  */
 public class IncrementalSupportVisitor extends IncrementalVisitor {
 
+
     @NonNull
     private static final ILogger LOG = LoggerWrapper.getLogger(IncrementalSupportVisitor.class);
 
@@ -108,6 +109,7 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
         visitedClassName = name;
         visitedSuperName = superName;
 
+        InstantProguardMap.instance().putClass(visitedClassName);
 //        addSerialUidIfMissing();
         super.visitField(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC
                         | Opcodes.ACC_VOLATILE | Opcodes.ACC_SYNTHETIC | Opcodes.ACC_TRANSIENT,
@@ -148,7 +150,7 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
     @Override
     public MethodVisitor visitMethod(int access, String name, String desc, String signature,
                                      String[] exceptions) {
-
+        InstantProguardMap.instance().putMethod(InstantRunTool.getMtdSig(name, desc));
         access = transformAccessForInstantRun(access);
 
         MethodVisitor defaultVisitor = super.visitMethod(access, name, desc, signature, exceptions);
@@ -189,7 +191,7 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
                         name,
                         desc,
                         args,
-                        Type.getReturnType(desc),isStatic));
+                        Type.getReturnType(desc), isStatic));
             }
             method.accept(mv);
             return null;
@@ -294,8 +296,12 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
 
                 super.visitLabel(start);
                 change = newLocal(MTD_MAP_TYPE);
-                visitFieldInsn(Opcodes.GETSTATIC, visitedClassName, "$change",
-                        getRuntimeTypeName(MTD_MAP_TYPE));
+//                visitFieldInsn(Opcodes.GETSTATIC, visitedClassName, "$change",
+//                        getRuntimeTypeName(MTD_MAP_TYPE));
+                push(new Integer(InstantProguardMap.instance().getNowClassIndex()));
+                push(new Integer(InstantProguardMap.instance().getNowMtdIndex()));
+                invokeStatic(IncrementalVisitor.MTD_MAP_TYPE, Method.getMethod("com.android.tools.fd.runtime.IncrementalChange get(int,int)"));
+
                 storeLocal(change);
 
                 redirectAt(start);

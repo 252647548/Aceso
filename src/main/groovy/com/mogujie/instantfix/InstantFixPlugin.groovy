@@ -105,7 +105,8 @@ class InstantFixPlugin implements Plugin<Project> {
         Log.i "start inject "
         ArrayList<File> classPath = new ArrayList<>()
         classPath.add(androidJar)
-        InstantFixWrapper.instrument(combindJar, instrumentJar, classPath)
+        File mappingFile = new File(project.buildDir, "intermediates/instant-mapping/${varDirName}/mapping.txt")
+        InstantFixWrapper.instrument(combindJar, instrumentJar, classPath, mappingFile)
 
         //backup origin jar and overlay origin jar
         File classBackupDir = new File(project.buildDir, "intermediates/jar-backup/${varDirName}")
@@ -137,7 +138,7 @@ class InstantFixPlugin implements Plugin<Project> {
             classPath.add(new File(InstantUtil.getAndroidSdkPath(project)))
             classPath.addAll(classTask.classpath.files)
 
-            InstantFixWrapper.instantFix(tempJarFile, jarFile, classPath, null)
+            InstantFixWrapper.instantFix(tempJarFile, jarFile, classPath, null, config.mappingFile)
             Utils.clearDir(classTask.destinationDir)
             project.copy {
                 from project.zipTree(jarFile)
@@ -166,7 +167,7 @@ class InstantFixPlugin implements Plugin<Project> {
             ArrayList<File> classPath = new ArrayList()
             classPath.addAll(classTask.classpath.files)
             classPath.add(new File(InstantUtil.getAndroidSdkPath(project)))
-            InstantFixWrapper.instantFix(combindJar, fixJar, classPath, proguardMap)
+            InstantFixWrapper.instantFix(combindJar, fixJar, classPath, proguardMap, config.mappingFile)
 
             InstantUtil.copy(project, combindJar, combindBackupJar.parentFile)
 
@@ -215,17 +216,19 @@ class InstantFixPlugin implements Plugin<Project> {
                 if (!name.endsWith(".class")) {
                     return false
                 }
+
                 if (name.endsWith("BuildConfig.class") || name ==~ MATCHER_R) {
                     return false
                 }
-                if (name.startsWith("com/mogujie/") || name.startsWith("com/mogu/") || name.startsWith("com/xiaodian/")
-                        || name.startsWith("com/minicooper/") || name.startsWith("com/squareup/picasso")
-                        || name.startsWith("com/nineold/animation")
-                        || name.startsWith("com/astonmartin/image") || name.startsWith("com/caches") || name.startsWith("com/facebook")) {
-                    return true
-                } else {
-                    return false
-                }
+
+//                if (name.startsWith("com/mogujie/") || name.startsWith("com/mogu/") || name.startsWith("com/xiaodian/")
+//                        || name.startsWith("com/minicooper/") || name.startsWith("com/squareup/picasso")
+//                        || name.startsWith("com/nineold/animation")
+//                        || name.startsWith("com/astonmartin/image") || name.startsWith("com/caches") || name.startsWith("com/facebook")) {
+//                    return true
+//                } else {
+//                    return false
+//                }
 
                 Log.i("filter accept => " + name)
                 if (name.startsWith("com/xiaomi/")
@@ -233,7 +236,6 @@ class InstantFixPlugin implements Plugin<Project> {
                         || name.startsWith("com/android/")
                         || name.startsWith("com/google/")
                         || name.startsWith("android/")
-                        || name.startsWith("org/")
                         || name.startsWith("okhttp3/")) {
                     return false
                 }

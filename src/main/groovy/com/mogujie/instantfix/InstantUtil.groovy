@@ -45,7 +45,10 @@ class InstantUtil {
             }
         }
     }
+
     public static boolean isProguard(Project project, String varName) {
         return (project.tasks.findByName("transformClassesAndResourcesWithProguardFor${varName}") != null)
     }
+
+
 }

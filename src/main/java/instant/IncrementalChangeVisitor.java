@@ -82,6 +82,8 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
     // List of constructors we encountered and deconstructed.
     List<MethodNode> addedMethods = new ArrayList();
 
+    ArrayList<String> fixMtds = new ArrayList<>();
+
     private enum MachineState {
         NORMAL, AFTER_NEW
     }
@@ -204,24 +206,13 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
         access = Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC;
         MethodNode method = getMethodByNameInClass(name, desc, classNode);
         if (name.equals("<init>")) {
-//            Constructor constructor = ConstructorBuilder.build(visitedClassName, method);
-//
-//            MethodVisitor original = super.visitMethod(access, constructor.args.name, constructor.args.desc, constructor.args.signature, exceptions);
-//            ISVisitor mv = new ISVisitor(original, access, constructor.args.name, constructor.args.desc, isStatic, true /* isConstructor */);
-//            constructor.args.accept(mv);
-//
-//            original = super.visitMethod(access, constructor.body.name, constructor.body.desc, constructor.body.signature, exceptions);
-//            mv = new ISVisitor(original, access, constructor.body.name, newDesc, isStatic, true /* isConstructor */);
-//            constructor.body.accept(mv);
-//
-//            // Remember our created methods so we can generated the access$dispatch for them.
-//            addedMethods.add(constructor.args);
-//            addedMethods.add(constructor.body);
             return null;
         } else {
             String newName = isStatic ? computeOverrideMethodName(name, desc) : name;
             MethodVisitor original = super.visitMethod(access, newName, newDesc, signature, exceptions);
-            return new ISVisitor(original, access, newName, newDesc, isStatic, false /* isConstructor */);
+
+            return new ISVisitor(original, access, newName, newDesc,
+                    InstantRunTool.getMtdSig(name, desc),isStatic, false /* isConstructor */);
         }
     }
 
@@ -237,6 +228,7 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
 
         private final boolean isStatic;
         private final boolean isConstructor;
+        private final String originalMtdSig;
 
         /**
          * Instrument a method.
@@ -253,11 +245,21 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
                 int access,
                 String name,
                 String desc,
+                String originalMtdSig,
                 boolean isStatic,
                 boolean isConstructor) {
             super(Opcodes.ASM5, mv, access, name, desc);
             this.isStatic = isStatic;
             this.isConstructor = isConstructor;
+            this.originalMtdSig = originalMtdSig;
+        }
+
+        @Override
+        public AnnotationVisitor visitAnnotation(String desc, boolean visible) {
+            if (desc.equals(FIXMTD_ANNOTATION_TYPE.getDescriptor())) {
+                fixMtds.add(originalMtdSig);
+            }
+            return super.visitAnnotation(desc, visible);
         }
 
         @Override
@@ -537,7 +539,7 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
                     System.out.println(
                             "Private Method : " + name + ":" + desc + ":" + itf + ":" + isStatic);
                 }
-                if(priNativeMtdSet.contains(name+"."+desc)){
+                if (priNativeMtdSet.contains(name + "." + desc)) {
                     pushMethodRedirectArgumentsOnStack(name, desc);
 
                     // Stack : <receiver>
@@ -549,7 +551,7 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
                     // Stack : <return value or null if no return value>
                     handleReturnType(desc);
                     return true;
-                }else{
+                } else {
                     // private method dispatch, just invoke the $override class static method.
                     String newDesc = computeOverrideMethodDesc(desc, false /*isStatic*/);
                     super.visitMethodInsn(Opcodes.INVOKESTATIC, owner + "$override", name, newDesc, itf);
@@ -888,6 +890,8 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
     @Override
     public void visitEnd() {
         addDispatchMethod();
+        addSupportMethod();
+        super.visitEnd();
     }
 
     /**
@@ -917,7 +921,7 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
      */
     private void addDispatchMethod() {
         int access = Opcodes.ACC_PUBLIC | Opcodes.ACC_VARARGS;
-        Method m = new Method("access$dispatch", "(Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/Object;");
+        Method m = new Method("access$dispatch", "(I[Ljava/lang/Object;)Ljava/lang/Object;");
         MethodVisitor visitor = super.visitMethod(access,
                 m.getName(),
                 m.getDescriptor(),
@@ -952,10 +956,15 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
             methods.put(methodNode.name + "." + methodNode.desc, methodNode);
         }
 
-        new StringSwitch() {
+        new IntSwitch() {
             @Override
             void visitString() {
                 mv.visitVarInsn(Opcodes.ALOAD, 1);
+            }
+
+            @Override
+            void visitInt() {
+                mv.visitVarInsn(Opcodes.ILOAD, 1);
             }
 
             @Override
@@ -994,12 +1003,50 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
             void visitDefault() {
                 writeMissingMessageWithHash(mv, visitedClassName);
             }
-        }.visit(mv, methods.keySet());
+        }.visit(mv, methods.keySet(), visitedClassName);
 
         mv.visitMaxs(0, 0);
         mv.visitEnd();
 
-        super.visitEnd();
+
+    }
+
+    public void addSupportMethod() {
+        int access = Opcodes.ACC_PUBLIC;
+        Method m = new Method("isSupport", "(I)Z");
+        MethodVisitor mv = super.visitMethod(access,
+                m.getName(),
+                m.getDescriptor(),
+                null, null);
+
+        mv.visitCode();
+        mv.visitVarInsn(Opcodes.ALOAD, 1);
+//        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/String", "hashCode", "()I", false);
+
+        int[] hashArray = new int[fixMtds.size()];
+        Label[] labelArray = new Label[fixMtds.size()];
+        Label l0 = new Label();
+        Label l1 = new Label();
+        for (int i = 0; i < fixMtds.size(); i++) {
+            hashArray[i] = InstantProguardMap.instance().getClassData(visitedClassName).getMtdIndex(fixMtds.get(i));
+            labelArray[i] = l0;
+        }
+
+        mv.visitLookupSwitchInsn(l1, hashArray, labelArray);
+        mv.visitLabel(l0);
+        mv.visitFrame(Opcodes.F_SAME, 0, null, 0, null);
+        mv.visitInsn(Opcodes.ICONST_1);
+        mv.visitInsn(Opcodes.IRETURN);
+        mv.visitLabel(l1);
+        mv.visitFrame(Opcodes.F_SAME, 0, null, 0, null);
+        mv.visitInsn(Opcodes.ICONST_0);
+        mv.visitInsn(Opcodes.IRETURN);
+        mv.visitMaxs(1, 2);
+        mv.visitEnd();
+
+        mv.visitMaxs(0, 0);
+        mv.visitEnd();
+
     }
 
     /**

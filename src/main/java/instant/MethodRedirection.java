@@ -31,8 +31,8 @@ public class MethodRedirection extends Redirection {
     @NonNull
     private final String name;
 
-    MethodRedirection(@NonNull LabelNode label,String visitedClassName, String mtdName, String mtdDesc, @NonNull List<Type> types, @NonNull Type type,boolean isStatic) {
-        super(label,visitedClassName, mtdName, mtdDesc, types, type,isStatic);
+    MethodRedirection(@NonNull LabelNode label, String visitedClassName, String mtdName, String mtdDesc, @NonNull List<Type> types, @NonNull Type type, boolean isStatic) {
+        super(label, visitedClassName, mtdName, mtdDesc, types, type, isStatic);
         this.name = mtdName + "." + mtdDesc;
     }
 
@@ -40,15 +40,15 @@ public class MethodRedirection extends Redirection {
     @Override
     protected void doRedirect(@NonNull GeneratorAdapter mv, int change) {
         // Push the three arguments
-        mv.loadLocal(change);
-        mv.push(mtdName+"."+newMtdDesc);
-        mv.invokeVirtual(IncrementalVisitor.MTD_MAP_TYPE, Method.getMethod("Object get(Object)"));
-
 //        mv.loadLocal(change);
-        mv.push(name);
+//        mv.push(InstantProguardMap.instance().getMtdIndex());
+//        mv.invokeVirtual(IncrementalVisitor.MTD_MAP_TYPE, Method.getMethod("Object get(int)"));
+
+        mv.loadLocal(change);
+        mv.push(InstantProguardMap.instance().getNowMtdIndex());
         ByteCodeUtils.newVariableArray(mv, ByteCodeUtils.toLocalVariables(types));
 
         // now invoke the generic dispatch method.
-        mv.invokeInterface(IncrementalVisitor.CHANGE_TYPE, Method.getMethod("Object access$dispatch(String, Object[])"));
+        mv.invokeInterface(IncrementalVisitor.CHANGE_TYPE, Method.getMethod("Object access$dispatch(int, Object[])"));
     }
 }

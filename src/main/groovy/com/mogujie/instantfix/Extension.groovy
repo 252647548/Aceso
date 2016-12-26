@@ -6,6 +6,7 @@ package com.mogujie.instantfix;
 public class Extension {
     public boolean instrument = true
     public boolean ignoreWarning=false
+    public File mappingFile
 
     @Override
     public String toString() {

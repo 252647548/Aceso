@@ -70,11 +70,14 @@ public class IncrementalVisitor extends ClassVisitor {
             Type.getObjectType(PACKAGE + "/AndroidInstantRuntime");
     public static final Type DISABLE_ANNOTATION_TYPE =
             Type.getObjectType("com/android/tools/ir/api/DisableInstantRun");
+    public static final Type FIXMTD_ANNOTATION_TYPE =
+            Type.getObjectType("com/android/annotations/FixMtd");
+
 
     protected static final boolean TRACING_ENABLED = Boolean.getBoolean("FDR_TRACING");
 
     public static final Type CHANGE_TYPE = Type.getObjectType(PACKAGE + "/IncrementalChange");
-    public static final Type MTD_MAP_TYPE = Type.getObjectType("java/util/HashMap");
+    public static final Type MTD_MAP_TYPE = Type.getObjectType(PACKAGE+"/InstantFixClassMap");
 
     protected String visitedClassName;
     protected String visitedSuperName;
@@ -112,7 +115,6 @@ public class IncrementalVisitor extends ClassVisitor {
 
     @Override
     public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
-        mtdCount++;
         return super.visitMethod(access, name, desc, signature, exceptions);
     }
 

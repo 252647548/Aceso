@@ -4,10 +4,7 @@ import com.google.common.collect.ImmutableList
 import com.google.common.collect.Iterables
 import com.mogujie.groovy.util.Log
 import com.mogujie.groovy.util.Utils
-import instant.IncrementalChangeVisitor
-import instant.IncrementalSupportVisitor
-import instant.IncrementalVisitor
-import instant.InstantRunTool
+import instant.*
 import org.gradle.api.GradleException
 
 import java.util.zip.ZipEntry
@@ -26,12 +23,15 @@ class InstantFixWrapper {
     static InstrumentFilter filter
 
     public
-    static void instrument(File combindJar, File supportJar, ArrayList<File> classPath) {
+    static void instrument(File combindJar, File supportJar, ArrayList<File> classPath, File mappingFile) {
+        InstantProguardMap.instance().reset()
         inject(combindJar, supportJar, classPath, null, IncrementalSupportVisitor.VISITOR_BUILDER, false)
+        InstantProguardMap.instance().printMapping(mappingFile)
     }
 
     public
-    static void instantFix(File combindJar, File instrumentJar, ArrayList<File> classPathList, HashMap<String, String> proguardMap) {
+    static void instantFix(File combindJar, File instrumentJar, ArrayList<File> classPathList, HashMap<String, String> proguardMap, File instantFixMapping) {
+        InstantProguardMap.instance().readMapping(instantFixMapping)
         inject(combindJar, instrumentJar, classPathList, proguardMap, IncrementalChangeVisitor.VISITOR_BUILDER, true)
     }
 
@@ -68,8 +68,6 @@ class InstantFixWrapper {
                     if (support(entryName)) {
                         count++;
                         instrumentClassInternal(builder, zos, zipFile, entry, entryName, isHotfix)
-                        mtdCount += IncrementalVisitor.mtdCount;
-                        IncrementalVisitor.mtdCount = 0;
                     } else {
                         putEntry(zos, zipFile, entry)
                     }
@@ -78,10 +76,10 @@ class InstantFixWrapper {
                     if (!isNewClass(entryName, classPath, proguardMap)) {
                         String addEntryName = instrumentClassInternal(builder, zos, zipFile, entry, entryName, isHotfix)
                         if (!Utils.isStringEmpty(addEntryName)) {
-                            fixClassList.add(addEntryName)
+                            fixClassList.add(entryName)
                         }
                     } else {
-                        fixClassList.add(pathToClassName(entryName))
+                        fixClassList.add(entryName)
                         putEntry(zos, zipFile, entry)
                     }
 
@@ -145,8 +143,8 @@ class InstantFixWrapper {
                                           boolean isHotfix) {
 
         boolean isPatch = IncrementalVisitor.instrumentClass(entry, zipFile, zos, builder, isHotfix)
-        Log.i("class ${entryName}'s mtd count : " + IncrementalVisitor.mtdCount)
-        entryName = pathToClassName(entryName)
+        Log.v("class ${entryName}'s mtd count : " + InstantProguardMap.instance().getNowMtdIndex())
+        entryName = pathToClassNameInPackage(entryName)
         if (isPatch) {
             return entryName
         } else {
@@ -154,7 +152,7 @@ class InstantFixWrapper {
         }
     }
 
-    private static String pathToClassName(String path) {
+    private static String pathToClassNameInPackage(String path) {
         String className = path.substring(0, path.lastIndexOf(".class"))
         className = className.replace(File.separator, ".")
         return className
@@ -171,9 +169,25 @@ class InstantFixWrapper {
     }
 
 
-    public static byte[] getPatchesLoaderClass(ArrayList list) {
-        ImmutableList<String> immutableList = ImmutableList.copyOf(list)
-        return InstantRunTool.getPatchFileContents(immutableList, 1)
+    public
+    static byte[] getPatchesLoaderClass(ArrayList<String> classPathList) {
+        ArrayList<String> classNames = new ArrayList<>()
+        ArrayList<Integer> classIndexs = new ArrayList<>()
+        for (int i = 0; i < classPathList.size(); i++) {
+            String classPath = classPathList.get(i)
+            classNames.add(pathToClassNameInPackage(classPath))
+            String classNameInAsm = classPath.substring(0, classPath.lastIndexOf(".class"))
+            InstantProguardMap.ClassData classData = InstantProguardMap.instance().getClassData(classNameInAsm)
+            if (classData == null) {
+                classIndexs.add(i, -1)
+            } else {
+                classIndexs.add(i, classData.getIndex())
+            }
+        }
+        ImmutableList<String> classNameList = ImmutableList.copyOf(classNames)
+
+        ImmutableList<Integer> classIndexList = ImmutableList.copyOf(classIndexs)
+        return InstantRunTool.getPatchFileContents(classNameList, classIndexList)
     }
 
 
