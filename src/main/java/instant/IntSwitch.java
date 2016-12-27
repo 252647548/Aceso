@@ -21,6 +21,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
 import com.google.common.collect.Ordering;
+import com.mogujie.groovy.util.Log;
 import org.gradle.api.GradleException;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.Opcodes;
@@ -61,6 +62,7 @@ abstract class IntSwitch {
     final Function<String, Integer> HASH_METHOD = new Function<String, Integer>() {
         @Override
         public Integer apply(String input) {
+            Log.i("input: "+input);
             return classData.getMtdIndex(input);
         }
     };

@@ -252,12 +252,15 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
             this.isStatic = isStatic;
             this.isConstructor = isConstructor;
             this.originalMtdSig = originalMtdSig;
+            fixMtds.add(originalMtdSig);
         }
 
         @Override
         public AnnotationVisitor visitAnnotation(String desc, boolean visible) {
+
             if (desc.equals(FIXMTD_ANNOTATION_TYPE.getDescriptor())) {
-                fixMtds.add(originalMtdSig);
+                //todo 为了测试
+                fixMtds.remove(originalMtdSig);
             }
             return super.visitAnnotation(desc, visible);
         }

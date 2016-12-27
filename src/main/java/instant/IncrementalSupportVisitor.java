@@ -111,9 +111,9 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
 
         InstantProguardMap.instance().putClass(visitedClassName);
 //        addSerialUidIfMissing();
-        super.visitField(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC
-                        | Opcodes.ACC_VOLATILE | Opcodes.ACC_SYNTHETIC | Opcodes.ACC_TRANSIENT,
-                "$change", getRuntimeTypeName(MTD_MAP_TYPE), null, null);
+//        super.visitField(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC
+//                        | Opcodes.ACC_VOLATILE | Opcodes.ACC_SYNTHETIC | Opcodes.ACC_TRANSIENT,
+//                "$change", getRuntimeTypeName(MTD_MAP_TYPE), null, null);
         access = transformClassAccessForInstantRun(access);
         super.visit(version, access, name, signature, superName, interfaces);
     }
