@@ -17,23 +17,17 @@
 package instant;
 
 
-import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
-import com.google.common.io.Files;
+import com.mogujie.groovy.util.Log;
 import com.mogujie.groovy.util.Utils;
 import org.objectweb.asm.*;
 import org.objectweb.asm.commons.GeneratorAdapter;
 import org.objectweb.asm.commons.Method;
-import org.objectweb.asm.tree.AnnotationNode;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.FieldNode;
 import org.objectweb.asm.tree.MethodNode;
 
 import java.io.*;
-import java.net.URL;
-import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -77,7 +71,7 @@ public class IncrementalVisitor extends ClassVisitor {
     protected static final boolean TRACING_ENABLED = Boolean.getBoolean("FDR_TRACING");
 
     public static final Type CHANGE_TYPE = Type.getObjectType(PACKAGE + "/IncrementalChange");
-    public static final Type MTD_MAP_TYPE = Type.getObjectType(PACKAGE+"/InstantFixClassMap");
+    public static final Type MTD_MAP_TYPE = Type.getObjectType(PACKAGE + "/InstantFixClassMap");
 
     protected String visitedClassName;
     protected String visitedSuperName;
@@ -228,66 +222,8 @@ public class IncrementalVisitor extends ClassVisitor {
         OutputType getOutputType();
     }
 
-    protected static void main(
-            @NonNull String[] args,
-            @NonNull VisitorBuilder visitorBuilder) throws IOException {
 
-        if (args.length != 3) {
-            throw new IllegalArgumentException("Needs to be given an input and output directory "
-                    + "and a classpath");
-        }
 
-        File srcLocation = new File(args[0]);
-        File baseInstrumentedCompileOutputFolder = new File(args[1]);
-        FileUtils.cleanOutputDir(baseInstrumentedCompileOutputFolder);
-
-        Iterable<String> classPathStrings = Splitter.on(File.pathSeparatorChar).split(args[2]);
-        List<URL> classPath = Lists.newArrayList();
-        for (String classPathString : classPathStrings) {
-            File path = new File(classPathString);
-            if (!path.exists()) {
-                throw new IllegalArgumentException(
-                        String.format("Invalid class path element %s", classPathString));
-            }
-            classPath.add(path.toURI().toURL());
-        }
-        classPath.add(srcLocation.toURI().toURL());
-        URL[] classPathArray = Iterables.toArray(classPath, URL.class);
-
-        ClassLoader classesToInstrumentLoader = new URLClassLoader(classPathArray, null) {
-            @Override
-            public URL getResource(String name) {
-                // Never delegate to bootstrap classes.
-                return findResource(name);
-            }
-        };
-
-        ClassLoader originalThreadContextClassLoader = Thread.currentThread()
-                .getContextClassLoader();
-        try {
-            Thread.currentThread().setContextClassLoader(classesToInstrumentLoader);
-            instrumentClasses(srcLocation,
-                    baseInstrumentedCompileOutputFolder, visitorBuilder);
-        } finally {
-            Thread.currentThread().setContextClassLoader(originalThreadContextClassLoader);
-        }
-    }
-
-    private static void instrumentClasses(
-            @NonNull File rootLocation,
-            @NonNull File outLocation,
-            @NonNull VisitorBuilder visitorBuilder) throws IOException {
-
-        if (rootLocation.isFile() && (rootLocation.getName().endsWith(".jar") || rootLocation.getName().endsWith(".zip"))) {
-
-        }
-        Iterable<File> files =
-                Files.fileTreeTraverser().preOrderTraversal(rootLocation).filter(Files.isFile());
-
-        for (File inputFile : files) {
-            instrumentClass(rootLocation, inputFile, outLocation, visitorBuilder);
-        }
-    }
 
     /**
      * Defines when a method access flags are compatible with InstantRun technology.
@@ -348,7 +284,7 @@ public class IncrementalVisitor extends ClassVisitor {
             }
         };
 
-        ClassNode classNode = new ClassNode();
+        ClassNode classNode = new TransformAccessClassNode();
         classReader.accept(classNode, ClassReader.EXPAND_FRAMES);
 
         // when dealing with interface, we just copy the inputFile over without any changes unless
@@ -400,123 +336,34 @@ public class IncrementalVisitor extends ClassVisitor {
         IncrementalVisitor visitor = visitorBuilder.build(classNode, parentsNodes, classWriter);
         classNode.accept(visitor);
 
+
         zos.putNextEntry(nowEntry);
         zos.write(classWriter.toByteArray());
         zos.closeEntry();
+
+        if (isHotfix) {
+
+            IncrementalChangeVisitor changeVisitor = (IncrementalChangeVisitor) visitor;
+            if (changeVisitor.superMethods.size() > 0) {
+                SuperHelperVisitor superHelperVisitor = new SuperHelperVisitor(Opcodes.ASM5, changeVisitor, parentsNodes.get(0));
+                superHelperVisitor.start();
+                String newName = entry.getName();
+                newName = newName.substring(0, newName.lastIndexOf(".class"));
+                newName += "$helper.class";
+                ZipEntry zipEntry = new ZipEntry(newName);
+                zos.putNextEntry(zipEntry);
+                zos.write(superHelperVisitor.toByteArray());
+                zos.closeEntry();
+            }
+
+        }
         return true;
-    }
-
-    @Nullable
-    public static File instrumentClass(
-            @NonNull File inputRootDirectory,
-            @NonNull File inputFile,
-            @NonNull File outputDirectory,
-            @NonNull VisitorBuilder visitorBuilder) throws IOException {
-
-        byte[] classBytes;
-        String path = FileUtils.relativePath(inputFile, inputRootDirectory);
-        if (!inputFile.getPath().endsWith(SdkConstants.DOT_CLASS)) {
-            File outputFile = new File(outputDirectory, path);
-            Files.createParentDirs(outputFile);
-            Files.copy(inputFile, outputFile);
-            return outputFile;
-        }
-        classBytes = Files.toByteArray(inputFile);
-        ClassReader classReader = new ClassReader(classBytes);
-        // override the getCommonSuperClass to use the thread context class loader instead of
-        // the system classloader. This is useful as ASM needs to load classes from the project
-        // which the system classloader does not have visibility upon.
-        // TODO: investigate if there is not a simpler way than overriding.
-        ClassWriter classWriter = new ClassWriter(classReader, ClassWriter.COMPUTE_FRAMES) {
-            @Override
-            protected String getCommonSuperClass(final String type1, final String type2) {
-                Class<?> c, d;
-                ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-                try {
-                    c = Class.forName(type1.replace('/', '.'), false, classLoader);
-                    d = Class.forName(type2.replace('/', '.'), false, classLoader);
-                } catch (ClassNotFoundException e) {
-                    // This may happen if we're processing class files which reference APIs not
-                    // available on the target device. In this case return a dummy value, since this
-                    // is ignored during dx compilation.
-                    return "instant/run/NoCommonSuperClass";
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
-                if (c.isAssignableFrom(d)) {
-                    return type1;
-                }
-                if (d.isAssignableFrom(c)) {
-                    return type2;
-                }
-                if (c.isInterface() || d.isInterface()) {
-                    return "java/lang/Object";
-                } else {
-                    do {
-                        c = c.getSuperclass();
-                    } while (!c.isAssignableFrom(d));
-                    return c.getName().replace('.', '/');
-                }
-            }
-        };
-
-        ClassNode classNode = new ClassNode();
-        classReader.accept(classNode, ClassReader.EXPAND_FRAMES);
-
-        // when dealing with interface, we just copy the inputFile over without any changes unless
-        // this is a package private interface.
-        AccessRight accessRight = AccessRight.fromNodeAccess(classNode.access);
-        File outputFile = new File(outputDirectory, path);
-        if ((classNode.access & Opcodes.ACC_INTERFACE) != 0) {
-            if (visitorBuilder.getOutputType() == OutputType.INSTRUMENT) {
-                // don't change the name of interfaces.
-                Files.createParentDirs(outputFile);
-                if (accessRight == AccessRight.PACKAGE_PRIVATE) {
-                    classNode.access = classNode.access | Opcodes.ACC_PUBLIC;
-                    classNode.accept(classWriter);
-                    Files.write(classWriter.toByteArray(), outputFile);
-                } else {
-                    // just copy the input file over, no change.
-                    Files.write(classBytes, outputFile);
-                }
-                return outputFile;
-            } else {
-                return null;
-            }
-        }
-
-        List<ClassNode> parentsNodes = parseParents(inputFile, classNode);
-
-        // if we could not determine the parent hierarchy, disable instant run.
-        if (parentsNodes.isEmpty() || isPackageInstantRunDisabled(inputFile, classNode)) {
-            if (visitorBuilder.getOutputType() == OutputType.INSTRUMENT) {
-                Files.createParentDirs(outputFile);
-                Files.write(classBytes, outputFile);
-                return outputFile;
-            } else {
-                return null;
-            }
-        }
-
-        outputFile = new File(outputDirectory, visitorBuilder.getMangledRelativeClassFilePath(path));
-        Files.createParentDirs(outputFile);
-        IncrementalVisitor visitor = visitorBuilder.build(classNode, parentsNodes, classWriter);
-        classNode.accept(visitor);
-
-        Files.write(classWriter.toByteArray(), outputFile);
-        return outputFile;
-    }
-
-    @NonNull
-    private static File getBinaryFolder(@NonNull File inputFile, @NonNull ClassNode classNode) {
-        return new File(inputFile.getAbsolutePath().substring(0,
-                inputFile.getAbsolutePath().length() - (classNode.name.length() + ".class".length())));
     }
 
 
     @NonNull
     private static List<ClassNode> parseParents(
-            @NonNull ZipFile zipFile, @NonNull ClassNode classNode) throws IOException {
+            @NonNull ZipFile zipFile, @NonNull final ClassNode classNode) throws IOException {
 //        File binaryFolder = getBinaryFolder(inputFile, classNode);
         List<ClassNode> parentNodes = new ArrayList<ClassNode>();
         String currentParentName = classNode.superName;
@@ -528,7 +375,7 @@ public class IncrementalVisitor extends ClassVisitor {
 //                LOG.info("Parsing %s.", zipEntry.getName());
                 InputStream parentFileClassReader = new BufferedInputStream(zipFile.getInputStream(zipEntry));
                 ClassReader parentClassReader = new ClassReader(parentFileClassReader);
-                ClassNode parentNode = new ClassNode();
+                ClassNode parentNode = new TransformAccessClassNode();
                 parentClassReader.accept(parentNode, ClassReader.EXPAND_FRAMES);
                 parentNodes.add(parentNode);
                 currentParentName = parentNode.superName;
@@ -543,6 +390,13 @@ public class IncrementalVisitor extends ClassVisitor {
                     parentClassReader.accept(parentNode, ClassReader.EXPAND_FRAMES);
                     parentNodes.add(parentNode);
                     currentParentName = parentNode.superName;
+                    if (classNode.name.contains("FlexByteArrayPool")) {
+                        Log.i("find class--> " + parentNode.name + "   " + parentNode.fields.size());
+                        for (FieldNode field : parentNode.fields) {
+                            Log.i("w:  " + field.name + "  " + field.access);
+                        }
+
+                    }
                 } catch (IOException e) {
                     // Could not locate parent class. This is as far as we can go locating parents.
                     LOG.info(
@@ -554,82 +408,6 @@ public class IncrementalVisitor extends ClassVisitor {
             }
         }
         return parentNodes;
-    }
-
-    @NonNull
-    private static List<ClassNode> parseParents(
-            @NonNull File inputFile, @NonNull ClassNode classNode) throws IOException {
-        File binaryFolder = getBinaryFolder(inputFile, classNode);
-        List<ClassNode> parentNodes = new ArrayList<ClassNode>();
-        String currentParentName = classNode.superName;
-
-        while (currentParentName != null) {
-            File parentFile = new File(binaryFolder, currentParentName + ".class");
-            if (parentFile.exists()) {
-                LOG.info("Parsing %s.", parentFile);
-                InputStream parentFileClassReader = new BufferedInputStream(new FileInputStream(parentFile));
-                ClassReader parentClassReader = new ClassReader(parentFileClassReader);
-                ClassNode parentNode = new ClassNode();
-                parentClassReader.accept(parentNode, ClassReader.EXPAND_FRAMES);
-                parentNodes.add(parentNode);
-                currentParentName = parentNode.superName;
-            } else {
-                // May need method information from outside of the current project. Thread local class reader
-                // should be the one
-                try {
-                    ClassReader parentClassReader = new ClassReader(
-                            Thread.currentThread().getContextClassLoader().getResourceAsStream(
-                                    currentParentName + ".class"));
-                    ClassNode parentNode = new ClassNode();
-                    parentClassReader.accept(parentNode, ClassReader.EXPAND_FRAMES);
-                    parentNodes.add(parentNode);
-                    currentParentName = parentNode.superName;
-                } catch (IOException e) {
-                    // Could not locate parent class. This is as far as we can go locating parents.
-                    LOG.info(
-                            "IncrementalVisitor parseParents could not locate %1$s "
-                                    + "which is an ancestor of project class %2$s.\n",
-                            currentParentName, classNode.name);
-                    return ImmutableList.of();
-                }
-            }
-        }
-        return parentNodes;
-    }
-
-    @Nullable
-    private static ClassNode parsePackageInfo(
-            @NonNull File inputFile, @NonNull ClassNode classNode) throws IOException {
-
-        File packageFolder = inputFile.getParentFile();
-        File packageInfoClass = new File(packageFolder, "package-info.class");
-        if (packageInfoClass.exists()) {
-            InputStream reader = new BufferedInputStream(new FileInputStream(packageInfoClass));
-            ClassReader classReader = new ClassReader(reader);
-            ClassNode packageInfo = new ClassNode();
-            classReader.accept(packageInfo, ClassReader.EXPAND_FRAMES);
-            return packageInfo;
-        }
-        return null;
-    }
-
-    private static boolean isPackageInstantRunDisabled(
-            @NonNull File inputFile, @NonNull ClassNode classNode) throws IOException {
-
-        ClassNode packageInfoClass = parsePackageInfo(inputFile, classNode);
-        if (packageInfoClass != null) {
-            //noinspection unchecked
-            List<AnnotationNode> annotations = packageInfoClass.invisibleAnnotations;
-            if (annotations == null) {
-                return false;
-            }
-            for (AnnotationNode annotation : annotations) {
-                if (annotation.desc.equals(DISABLE_ANNOTATION_TYPE.getDescriptor())) {
-                    return true;
-                }
-            }
-        }
-        return false;
     }
 
 

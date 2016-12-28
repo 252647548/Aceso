@@ -7,6 +7,8 @@ public class Extension {
     public boolean instrument = true
     public boolean ignoreWarning=false
     public File mappingFile
+    public File allClassesJar
+
 
     @Override
     public String toString() {

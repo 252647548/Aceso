@@ -21,13 +21,24 @@ public class InstantProguardMap {
 
     private int nowMtdIndex;
 
+    private int nowFieldIndex;
+
+    private int classMax;
+
+    private int mtdMax;
+
+    private int fieldMax;
+
+
     public class ClassData {
         Integer index;
         HashMap<String, Integer> methodMap;
+        HashMap<String, Integer> fieldMap;
 
-        ClassData(Integer index, HashMap<String, Integer> methodMap) {
+        ClassData(Integer index, HashMap<String, Integer> methodMap, HashMap<String, Integer> fieldMap) {
             this.index = index;
             this.methodMap = methodMap;
+            this.fieldMap = fieldMap;
         }
 
         public int getIndex() {
@@ -38,9 +49,16 @@ public class InstantProguardMap {
             methodMap.put(mtdSig, index);
         }
 
-        public int getMtdIndex(String mtdSig) {
-
+        public Integer getMtdIndex(String mtdSig) {
             return methodMap.get(mtdSig);
+        }
+
+        public void addField(String fieldSig, int index) {
+            fieldMap.put(fieldSig, index);
+        }
+
+        public Integer getFieldIndex(String fieldSig) {
+            return fieldMap.get(fieldSig);
         }
     }
 
@@ -69,18 +87,23 @@ public class InstantProguardMap {
 
     public void putClass(String classNameInAsm) {
         nowClassIndex++;
-        putClass(classNameInAsm, nowClassIndex);
+        putClass(classNameInAsm, classMax + nowClassIndex);
 
     }
 
     public void putClass(String classNameInAsm, int index) {
-        nowClass = new ClassData(index, new HashMap<String, Integer>());
+        nowClass = new ClassData(index, new HashMap<String, Integer>(), new HashMap<String, Integer>());
         classesMap.put(classNameInAsm, nowClass);
     }
 
     public void putMethod(String mtdSig) {
+//        Integer oriIndex=nowClass.getMtdIndex(mtdSig);
+//        if(oriIndex!=null){
+//
+//
+//        }
         nowMtdIndex++;
-        putMethod(mtdSig, nowMtdIndex);
+        putMethod(mtdSig, mtdMax + nowMtdIndex);
 
     }
 
@@ -91,19 +114,49 @@ public class InstantProguardMap {
         nowClass.addMtd(mtdSig, index);
     }
 
+
+    public void putField(String fieldSig) {
+        nowFieldIndex++;
+        putField(fieldSig, fieldMax + nowFieldIndex);
+
+    }
+
+    public void putField(String fieldSig, int index) {
+        if (nowClass == null) {
+            throw new GradleException("nowClass is null, you must invoke putClass before putMethod");
+        }
+        nowClass.addMtd(fieldSig, index);
+    }
+
     public void readMapping(File mappingFile) throws IOException {
         reset();
         LineNumberReader reader = new LineNumberReader(
                 new BufferedReader(
                         new FileReader(mappingFile)));
+        boolean hashReadHeader = true;
+        int tempClassMax = 0;
+        int tempMtdMax = 0;
+        int tempFieldMax = 0;
         while (true) {
             String line = reader.readLine();
 
             if (line == null) {
                 break;
             }
-
             line = line.trim();
+
+            if (!hashReadHeader) {
+                String[] strings = line.split(":");
+                if (strings.length != 3) {
+                    throw new GradleException("mapping's header is wrong,except is classNum:methodNum:fieldNum");
+                }
+                tempClassMax = Integer.parseInt(strings[0].trim());
+                tempMtdMax = Integer.parseInt(strings[1].trim());
+                tempFieldMax = Integer.parseInt(strings[0].trim());
+                hashReadHeader = true;
+                continue;
+            }
+
             // Is it a non-comment line?
             if (!line.startsWith("#")) {
                 // Is it a class mapping or a class member mapping?
@@ -112,11 +165,19 @@ public class InstantProguardMap {
                     putClass(mapEntry.name, mapEntry.index);
                 } else if (nowClass != null) {
                     MapEntry mapEntry = getEntryFromLine(line);
-                    putMethod(mapEntry.name, mapEntry.index);
+                    if (line.contains("(")) {
+                        putMethod(mapEntry.name, mapEntry.index);
+                    } else {
+                        putField(mapEntry.name, mapEntry.index);
+                    }
                 }
             }
 
         }
+
+        classMax = tempClassMax;
+        mtdMax = tempMtdMax;
+        fieldMax = tempFieldMax;
 
     }
 
@@ -140,6 +201,7 @@ public class InstantProguardMap {
 
 
         final StringBuilder sb = new StringBuilder();
+        sb.append(nowClassIndex + ":" + nowMtdIndex + ":" + nowFieldIndex + "\n");
         eachMap(classesMap, new EachMapListenr<String, ClassData>() {
 
             @Override
@@ -148,6 +210,20 @@ public class InstantProguardMap {
                 sb.append(" -> ");
                 sb.append(classData.index);
                 sb.append(":\n");
+
+
+                eachMap(classData.fieldMap, new EachMapListenr<String, Integer>() {
+                    @Override
+                    public void invoke(String fieldSig, Integer fieldIndex) {
+                        sb.append("    ");
+                        sb.append(fieldSig);
+                        sb.append(" -> ");
+                        sb.append(fieldIndex);
+                        sb.append("\n");
+                    }
+
+                });
+
 
                 eachMap(classData.methodMap, new EachMapListenr<String, Integer>() {
                     @Override
@@ -173,6 +249,10 @@ public class InstantProguardMap {
         nowClass = null;
         nowClassIndex = 0;
         nowMtdIndex = 0;
+        nowFieldIndex = 0;
+        classMax = 0;
+        mtdMax = 0;
+        fieldMax = 0;
     }
 
 
@@ -189,8 +269,8 @@ public class InstantProguardMap {
     }
 
 
-    public static interface EachMapListenr<K, V> {
-        public void invoke(K key, V value);
+    public interface EachMapListenr<K, V> {
+        void invoke(K key, V value);
     }
 
     public static void eachMap(Map map, EachMapListenr listener) {

@@ -13,11 +13,11 @@ public class InstantRunTool {
 
     public static byte[] getPatchFileContents(
             @NonNull ImmutableList<String> patchFileContents, @NonNull ImmutableList<Integer> patchIndexContents) {
-if(patchFileContents.size()!=patchIndexContents.size()){
-    throw new GradleException("patchFileContents's size is "
-            +patchFileContents.size()+", but patchIndexContents's size is "
-            +patchIndexContents.size()+", please check the changed classes.");
-}
+        if (patchFileContents.size() != patchIndexContents.size()) {
+            throw new GradleException("patchFileContents's size is "
+                    + patchFileContents.size() + ", but patchIndexContents's size is "
+                    + patchIndexContents.size() + ", please check the changed classes.");
+        }
         ClassWriter cw = new ClassWriter(0);
         MethodVisitor mv;
 
@@ -78,5 +78,35 @@ if(patchFileContents.size()!=patchIndexContents.size()){
 
     public static String getMtdSig(String mtdName, String mtdDesc) {
         return mtdName + "." + mtdDesc;
+    }
+
+    public static String getFieldSig(String filedName, String fieldDesc) {
+        return fieldDesc + "." + filedName;
+    }
+
+    public static int transformAccessToPublic(int access) {
+        access &= ~Opcodes.ACC_PROTECTED;
+        access &= ~Opcodes.ACC_PRIVATE;
+        return access | Opcodes.ACC_PUBLIC;
+    }
+
+    public static int transformAccessForInstantRun(int access) {
+        IncrementalVisitor.AccessRight accessRight = IncrementalVisitor.AccessRight.fromNodeAccess(access);
+        if (accessRight != IncrementalVisitor.AccessRight.PRIVATE) {
+            access &= ~Opcodes.ACC_PROTECTED;
+            access &= ~Opcodes.ACC_PRIVATE;
+            return access | Opcodes.ACC_PUBLIC;
+        }
+        return access;
+    }
+
+    public static int transformClassAccessForInstantRun(int access) {
+        IncrementalVisitor.AccessRight accessRight = IncrementalVisitor.AccessRight.fromNodeAccess(access);
+        int fixedVisibility = accessRight == IncrementalVisitor.AccessRight.PACKAGE_PRIVATE
+                ? access | Opcodes.ACC_PUBLIC
+                : access;
+
+        // TODO: only do this on KitKat?
+        return fixedVisibility | Opcodes.ACC_SUPER;
     }
 }

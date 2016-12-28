@@ -1,5 +1,4 @@
 package com.mogujie.instantfix
-
 import com.android.SdkConstants
 import com.android.build.api.transform.Format
 import com.android.build.api.transform.Transform
@@ -13,7 +12,6 @@ import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
-
 /**
  * Created by wangzhi on 16/12/7.
  */
@@ -136,7 +134,7 @@ class InstantFixPlugin implements Plugin<Project> {
             jarMerger.close()
             ArrayList<File> classPath = new ArrayList()
             classPath.add(new File(InstantUtil.getAndroidSdkPath(project)))
-            classPath.addAll(classTask.classpath.files)
+            classPath.add(config.allClassesJar)
 
             InstantFixWrapper.instantFix(tempJarFile, jarFile, classPath, null, config.mappingFile)
             Utils.clearDir(classTask.destinationDir)
@@ -165,7 +163,8 @@ class InstantFixPlugin implements Plugin<Project> {
 
             File fixJar = InstantUtil.initFile(project.buildDir, "intermediates/jar-hotfix/${varDirName}/" + combindJar.name)
             ArrayList<File> classPath = new ArrayList()
-            classPath.addAll(classTask.classpath.files)
+//            classPath.addAll(classTask.classpath.files)
+            classPath.add(config.allClassesJar)
             classPath.add(new File(InstantUtil.getAndroidSdkPath(project)))
             InstantFixWrapper.instantFix(combindJar, fixJar, classPath, proguardMap, config.mappingFile)
 

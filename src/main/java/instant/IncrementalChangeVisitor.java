@@ -24,7 +24,6 @@ import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.FieldNode;
 import org.objectweb.asm.tree.MethodNode;
 
-import java.io.IOException;
 import java.util.*;
 
 /**
@@ -84,6 +83,9 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
 
     ArrayList<String> fixMtds = new ArrayList<>();
 
+    //被调用到的super.xxx()方法
+    ArrayList<InstantMethod> superMethods = new ArrayList<>();
+
     private enum MachineState {
         NORMAL, AFTER_NEW
     }
@@ -117,7 +119,7 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
     public void visit(int version, int access, String name, String signature, String superName,
                       String[] interfaces) {
         super.visit(version, Opcodes.ACC_PUBLIC | Opcodes.ACC_SUPER,
-                name + OVERRIDE_SUFFIX, signature, superName,
+                name + OVERRIDE_SUFFIX, signature, "java/lang/Object",
                 new String[]{CHANGE_TYPE.getInternalName()});
 
         if (DEBUG) {
@@ -204,7 +206,7 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
         // Do not carry on any access flags from the original method. For example synchronized
         // on the original method would translate into a static synchronized method here.
         access = Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC;
-        MethodNode method = getMethodByNameInClass(name, desc, classNode);
+//        MethodNode method = getMethodByNameInClass(name, desc, classNode);
         if (name.equals("<init>")) {
             return null;
         } else {
@@ -212,7 +214,7 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
             MethodVisitor original = super.visitMethod(access, newName, newDesc, signature, exceptions);
 
             return new ISVisitor(original, access, newName, newDesc,
-                    InstantRunTool.getMtdSig(name, desc),isStatic, false /* isConstructor */);
+                    InstantRunTool.getMtdSig(name, desc), isStatic, false /* isConstructor */);
         }
     }
 
@@ -567,17 +569,11 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
                     System.out.println(
                             "Super Method : " + name + ":" + desc + ":" + itf + ":" + isStatic);
                 }
-                super.visitMethodInsn(Opcodes.INVOKESPECIAL, owner, name, desc, itf);
 
-//                int arr = boxParametersToNewLocalArray(Type.getArgumentTypes(desc));
-//                push(name + "." + desc);
-//                loadLocal(arr);
-//                mv.visitMethodInsn(Opcodes.INVOKESTATIC, visitedClassName, "access$super",
-//                        instanceToStaticDescPrefix
-//                                + "Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/Object;",
-//                        false);
-//                handleReturnType(desc);
-
+                String newDesc = computeOverrideMethodDesc(desc, false);
+                InstantMethod method = new InstantMethod(name, newDesc, desc);
+                superMethods.add(method);
+                super.visitMethodInsn(Opcodes.INVOKESTATIC, visitedClassName + "$helper", name, newDesc, itf);
                 return true;
             }
         }
@@ -1052,17 +1048,7 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
 
     }
 
-    /**
-     * Command line invocation entry point. Expects 2 parameters, first is the source directory
-     * with .class files as produced by the Java compiler, second is the output directory where to
-     * store the bytecode enhanced version.
-     *
-     * @param args the command line arguments.
-     * @throws IOException if some files cannot be read or written.
-     */
-    public static void main(String[] args) throws IOException {
-        IncrementalVisitor.main(args, VISITOR_BUILDER);
-    }
+
 
     /**
      * Returns true if the passed class name is in the same package as the visited class.
@@ -1071,6 +1057,7 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
      * @return true if className and visited class are in the same java package.
      */
     private boolean isInSamePackage(@NonNull String type) {
+
         if (type.charAt(0) == '[') {
             return false;
         }
