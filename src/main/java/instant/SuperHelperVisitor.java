@@ -63,7 +63,7 @@ public class SuperHelperVisitor extends ClassWriter implements Opcodes {
                 totSize = variable.var;
             }
 
-            mv.visitMethodInsn(INVOKESPECIAL, visitor.visitedClassName, method.getName(), method.getOriDesc(), false);
+            mv.visitMethodInsn(INVOKESPECIAL, method.getOwner(), method.getName(), method.getOriDesc(), false);
 
 
             Type returnType = Type.getReturnType(method.getDescriptor());

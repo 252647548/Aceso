@@ -6,8 +6,11 @@ package com.mogujie.instantfix;
 public class Extension {
     public boolean instrument = true
     public boolean ignoreWarning=false
-    public File mappingFile
-    public File allClassesJar
+    public File instantMappingFile
+    public File modifiedJar
+    public boolean disable=false
+    public boolean disableInstrumentDebug =true
+    public boolean expandScope=false
 
 
     @Override

@@ -20,6 +20,7 @@ package instant;
 import com.google.common.collect.ImmutableList;
 import com.mogujie.groovy.util.Log;
 import com.mogujie.groovy.util.Utils;
+import org.gradle.api.GradleException;
 import org.objectweb.asm.*;
 import org.objectweb.asm.commons.GeneratorAdapter;
 import org.objectweb.asm.commons.Method;
@@ -345,6 +346,9 @@ public class IncrementalVisitor extends ClassVisitor {
 
             IncrementalChangeVisitor changeVisitor = (IncrementalChangeVisitor) visitor;
             if (changeVisitor.superMethods.size() > 0) {
+                if(parentsNodes.size()<=0){
+                    throw new GradleException("not found "+changeVisitor.visitedClassName+" 's parents.");
+                }
                 SuperHelperVisitor superHelperVisitor = new SuperHelperVisitor(Opcodes.ASM5, changeVisitor, parentsNodes.get(0));
                 superHelperVisitor.start();
                 String newName = entry.getName();

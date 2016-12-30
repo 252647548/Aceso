@@ -1,4 +1,5 @@
 package com.mogujie.instantfix
+
 import com.android.SdkConstants
 import com.android.build.api.transform.Format
 import com.android.build.api.transform.Transform
@@ -12,6 +13,7 @@ import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+
 /**
  * Created by wangzhi on 16/12/7.
  */
@@ -30,9 +32,28 @@ class InstantFixPlugin implements Plugin<Project> {
 
         project.afterEvaluate {
             config = project.extensions.findByName("InstantFix") as Extension
-            project.android.applicationVariants.all { variant ->
-                doIt(project, variant)
+
+
+            if (config.disable == false) {
+                if (config.instantMappingFile == null) {
+                    config.instantMappingFile = new File(project.projectDir, "instant-mapping.txt")
+                }
+                if (!Utils.checkFile(config.instantMappingFile)) {
+                    Log.e("instant mapping not found!")
+                }
+
+                if (config.modifiedJar == null) {
+                    config.modifiedJar = new File(project.projectDir, "modified.jar")
+                }
+
+                if (!Utils.checkFile(config.modifiedJar)) {
+                    Log.e("modifie jar  not found!")
+                }
+                project.android.applicationVariants.all { variant ->
+                    doIt(project, variant)
+                }
             }
+
         }
     }
 
@@ -57,7 +78,13 @@ class InstantFixPlugin implements Plugin<Project> {
             }
             return
         } else {
-            InstantFixWrapper.filter = initFilter()
+            if (config.expandScope) {
+//                expandScope(jarMergingTask);
+                return;
+            }
+            if (config.disableInstrumentDebug && varName.toLowerCase().contains("debug")) {
+                return;
+            }
             //todo jarMergingTask == null
             if (jarMergingTask == null) {
                 try {
@@ -73,10 +100,26 @@ class InstantFixPlugin implements Plugin<Project> {
             }
 
             jarMergingTask.doLast {
+
+                if (jarMergingTask.name.startsWith("transformClassesAndResourcesWithProguardFor")) {
+                    ProguardTool.instance().initProguardMap(jarMergingTask.transform.getMappingFile())
+                }
+
+                InstantFixWrapper.filter = initFilter()
                 doInstrumentClass(varName, varDirName, jarMergingTask)
             }
 
         }
+
+    }
+
+    private void expandScope(def jarMergingTask, String varName) {
+        if (jarMergingTask != null) {
+            getCombindJar(jarMergingTask, varName)
+        } else {
+
+        }
+
 
     }
 
@@ -89,7 +132,6 @@ class InstantFixPlugin implements Plugin<Project> {
         //instrument jar
         File instrumentJar
         if (InstantUtil.isProguard(project, varName)) {
-
             instrumentJar = InstantUtil.initFile(project.buildDir, "intermediates/jar-instrument/${varDirName}/main.jar")
         } else {
             instrumentJar = InstantUtil.initFile(project.buildDir, "intermediates/jar-instrument/${varDirName}/combined.jar")
@@ -134,9 +176,9 @@ class InstantFixPlugin implements Plugin<Project> {
             jarMerger.close()
             ArrayList<File> classPath = new ArrayList()
             classPath.add(new File(InstantUtil.getAndroidSdkPath(project)))
-            classPath.add(config.allClassesJar)
+            classPath.add(config.modifiedJar)
 
-            InstantFixWrapper.instantFix(tempJarFile, jarFile, classPath, null, config.mappingFile)
+            InstantFixWrapper.instantFix(tempJarFile, jarFile, classPath, null, config.instantMappingFile)
             Utils.clearDir(classTask.destinationDir)
             project.copy {
                 from project.zipTree(jarFile)
@@ -152,9 +194,8 @@ class InstantFixPlugin implements Plugin<Project> {
 //            jarMergingTask=jarMergingTask as dE
             HashMap<String, String> proguardMap = null
             if (jarMergingTask.name.startsWith("transformClassesAndResourcesWithProguardFor")) {
-                proguardMap = getProguardMap(jarMergingTask.transform.getMappingFile())
-                Log.i("get proguard map, size: " + proguardMap.size())
-                proguardMap.each { key, value -> Log.i(key + "<>" + value) }
+                ProguardTool.instance().initProguardMap(jarMergingTask.transform.getMappingFile())
+                proguardMap = ProguardTool.instance().getProguardMap()
             }
 
             File combindJar = getCombindJar(jarMergingTask, varName)
@@ -164,9 +205,9 @@ class InstantFixPlugin implements Plugin<Project> {
             File fixJar = InstantUtil.initFile(project.buildDir, "intermediates/jar-hotfix/${varDirName}/" + combindJar.name)
             ArrayList<File> classPath = new ArrayList()
 //            classPath.addAll(classTask.classpath.files)
-            classPath.add(config.allClassesJar)
+            classPath.add(config.modifiedJar)
             classPath.add(new File(InstantUtil.getAndroidSdkPath(project)))
-            InstantFixWrapper.instantFix(combindJar, fixJar, classPath, proguardMap, config.mappingFile)
+            InstantFixWrapper.instantFix(combindJar, fixJar, classPath, proguardMap, config.instantMappingFile)
 
             InstantUtil.copy(project, combindJar, combindBackupJar.parentFile)
 
@@ -174,41 +215,10 @@ class InstantFixPlugin implements Plugin<Project> {
         }
     }
 
-    public HashMap<String, String> getProguardMap(File mappingFile) {
-        HashMap<String, String> proguardMap = new HashMap<>()
-        mappingFile.readLines().each { line ->
-            line = line.trim();
-
-            // Is it a non-comment line?
-            if (!line.startsWith("#")) {
-                // Is it a class mapping or a class member mapping?
-                if (line.endsWith(":")) {
-
-
-                    int arrowIndex = line.indexOf("->");
-                    if (arrowIndex < 0) {
-                        return null;
-                    }
-
-                    int colonIndex = line.indexOf(':', arrowIndex + 2);
-                    if (colonIndex < 0) {
-                        return null;
-                    }
-
-                    // Extract the elements.
-                    String className = line.substring(0, arrowIndex).trim();
-                    String newClassName = line.substring(arrowIndex + 2, colonIndex).trim();
-                    proguardMap.put(newClassName.replace(".", "/") + ".class", className.replace(".", "/") + ".class")
-
-                }
-
-            }
-        }
-        return proguardMap
-    }
-
 
     public InstantFixWrapper.InstrumentFilter initFilter() {
+        HashMap
+
         return new InstantFixWrapper.InstrumentFilter() {
             @Override
             boolean accept(String name) {
@@ -220,25 +230,32 @@ class InstantFixPlugin implements Plugin<Project> {
                     return false
                 }
 
-//                if (name.startsWith("com/mogujie/") || name.startsWith("com/mogu/") || name.startsWith("com/xiaodian/")
-//                        || name.startsWith("com/minicooper/") || name.startsWith("com/squareup/picasso")
-//                        || name.startsWith("com/nineold/animation")
-//                        || name.startsWith("com/astonmartin/image") || name.startsWith("com/caches") || name.startsWith("com/facebook")) {
-//                    return true
-//                } else {
-//                    return false
-//                }
+                name = ProguardTool.instance().getProguardMap().get(name)
 
-                Log.i("filter accept => " + name)
-                if (name.startsWith("com/xiaomi/")
-                        || name.startsWith("org/apache/")
-                        || name.startsWith("com/android/")
-                        || name.startsWith("com/google/")
-                        || name.startsWith("android/")
-                        || name.startsWith("okhttp3/")) {
+                if (name.startsWith("com/astonmartin/image")
+                        || name.startsWith("com/squareup/picasso")
+                        || name.startsWith("com/nineold/animation")
+                        || name.startsWith("com/nineold/util")
+                        || name.startsWith("com/caches")
+                        || name.startsWith("com/mogujie/base")
+                        || name.startsWith("com/mogujie/home")
+                        || name.startsWith("com/mogujie/mwpsdk")
+                        || name.startsWith("com/facebook")) {
+                    return true
+                } else {
                     return false
                 }
-                return true
+
+//                Log.i("filter accept => " + name)
+//                if (name.startsWith("com/xiaomi/")
+//                        || name.startsWith("org/apache/")
+//                        || name.startsWith("com/android/")
+//                        || name.startsWith("com/google/")
+//                        || name.startsWith("android/")
+//                        || name.startsWith("okhttp3/")) {
+//                    return false
+//                }
+//                return true
 
 
             }

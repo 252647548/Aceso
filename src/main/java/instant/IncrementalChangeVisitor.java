@@ -571,7 +571,7 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
                 }
 
                 String newDesc = computeOverrideMethodDesc(desc, false);
-                InstantMethod method = new InstantMethod(name, newDesc, desc);
+                InstantMethod method = new InstantMethod(owner,name, newDesc, desc);
                 superMethods.add(method);
                 super.visitMethodInsn(Opcodes.INVOKESTATIC, visitedClassName + "$helper", name, newDesc, itf);
                 return true;

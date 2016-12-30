@@ -8,9 +8,12 @@ import org.objectweb.asm.commons.Method;
  */
 public class InstantMethod extends Method {
     private String oriDesc;
-    public InstantMethod(String name, String desc,String oriDesc) {
+    private String owner;
+
+    public InstantMethod(String owner, String name, String desc, String oriDesc) {
         super(name, desc);
-        this.oriDesc=oriDesc;
+        this.oriDesc = oriDesc;
+        this.owner = owner;
     }
 
     public InstantMethod(String name, Type returnType, Type[] argumentTypes) {
@@ -19,5 +22,10 @@ public class InstantMethod extends Method {
 
     public String getOriDesc() {
         return oriDesc;
+    }
+
+
+    public String getOwner() {
+        return owner;
     }
 }

@@ -112,11 +112,11 @@ class InstantFixWrapper {
                 ZipFile classJar = new ZipFile(path)
 
                 //获得混淆之前的类名
-                String realName = entryName
-                if (proguardMap != null) {
-                    realName = proguardMap.get(entryName)
-                }
-                if (realName != null && classJar.getEntry(realName) != null) {
+//                String realName = entryName
+//                if (proguardMap != null) {
+//                    realName = proguardMap.get(entryName)
+//                }
+                if (classJar.getEntry(entryName)!=null) {
                     isNewClass = false
                 }
 
@@ -190,5 +190,9 @@ class InstantFixWrapper {
         return InstantRunTool.getPatchFileContents(classNameList, classIndexList)
     }
 
+
+    public static void expandCode(){
+
+    }
 
 }
