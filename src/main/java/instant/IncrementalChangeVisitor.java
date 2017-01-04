@@ -189,6 +189,9 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
         }
 
         boolean isStatic = (access & Opcodes.ACC_STATIC) != 0;
+        boolean isPrivate = (access & Opcodes.ACC_PRIVATE) != 0;
+        boolean isSync = (access & Opcodes.ACC_SYNCHRONIZED) != 0;
+
         String newDesc = computeOverrideMethodDesc(desc, isStatic);
 
         if (DEBUG) {
@@ -203,9 +206,14 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
             System.out.println("New Desc is " + newDesc + ":" + isStatic);
         }
 
-        // Do not carry on any access flags from the original method. For example synchronized
-        // on the original method would translate into a static synchronized method here.
-        access = Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC;
+        if (isPrivate && isSync) {
+            access = Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_SYNCHRONIZED;
+        } else {
+            // Do not carry on any access flags from the original method. For example synchronized
+            // on the original method would translate into a static synchronized method here.
+            access = Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC;
+        }
+
 //        MethodNode method = getMethodByNameInClass(name, desc, classNode);
         if (name.equals("<init>")) {
             return null;
@@ -571,7 +579,7 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
                 }
 
                 String newDesc = computeOverrideMethodDesc(desc, false);
-                InstantMethod method = new InstantMethod(owner,name, newDesc, desc);
+                InstantMethod method = new InstantMethod(owner, name, newDesc, desc);
                 superMethods.add(method);
                 super.visitMethodInsn(Opcodes.INVOKESTATIC, visitedClassName + "$helper", name, newDesc, itf);
                 return true;
@@ -1047,7 +1055,6 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
         mv.visitEnd();
 
     }
-
 
 
     /**
