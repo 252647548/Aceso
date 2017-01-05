@@ -91,6 +91,7 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
     }
 
     HashSet<String> priNativeMtdSet = new HashSet<>();
+    HashSet<String> priSyncMtdSet = new HashSet<>();
 
     public IncrementalChangeVisitor(
             @NonNull ClassNode classNode,
@@ -102,6 +103,10 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
             if ((methodNode.access & (Opcodes.ACC_NATIVE | Opcodes.ACC_PRIVATE)) == (Opcodes.ACC_NATIVE | Opcodes.ACC_PRIVATE)) {
                 priNativeMtdSet.add(methodNode.name + "." + methodNode.desc);
                 System.out.println("find private native mtd : " + methodNode.name + "." + methodNode.desc);
+            }
+            if ((methodNode.access & (Opcodes.ACC_SYNCHRONIZED | Opcodes.ACC_PRIVATE)) == (Opcodes.ACC_SYNCHRONIZED | Opcodes.ACC_PRIVATE)) {
+                priSyncMtdSet.add(methodNode.name + "." + methodNode.desc);
+                System.out.println("find private sync mtd : " + methodNode.name + "." + methodNode.desc);
             }
         }
 
@@ -206,13 +211,13 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
             System.out.println("New Desc is " + newDesc + ":" + isStatic);
         }
 
-        if (isPrivate && isSync) {
-            access = Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_SYNCHRONIZED;
-        } else {
-            // Do not carry on any access flags from the original method. For example synchronized
-            // on the original method would translate into a static synchronized method here.
-            access = Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC;
-        }
+//        if (isPrivate && isSync) {
+//            access = Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_SYNCHRONIZED;
+//        } else {
+        // Do not carry on any access flags from the original method. For example synchronized
+        // on the original method would translate into a static synchronized method here.
+        access = Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC;
+//        }
 
 //        MethodNode method = getMethodByNameInClass(name, desc, classNode);
         if (name.equals("<init>")) {
@@ -552,7 +557,8 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
                     System.out.println(
                             "Private Method : " + name + ":" + desc + ":" + itf + ":" + isStatic);
                 }
-                if (priNativeMtdSet.contains(name + "." + desc)) {
+                String mtdSig = name + "." + desc;
+                if (priNativeMtdSet.contains(mtdSig) || priSyncMtdSet.contains(mtdSig)) {
                     pushMethodRedirectArgumentsOnStack(name, desc);
 
                     // Stack : <receiver>
