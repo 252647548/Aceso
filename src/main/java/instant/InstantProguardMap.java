@@ -86,9 +86,11 @@ public class InstantProguardMap {
     }
 
     public void putClass(String classNameInAsm) {
-        nowClassIndex++;
-        putClass(classNameInAsm, classMax + nowClassIndex);
-
+        nowClass = classesMap.get(classNameInAsm);
+        if (nowClass == null) {
+            nowClassIndex++;
+            putClass(classNameInAsm, classMax + nowClassIndex);
+        }
     }
 
     public void putClass(String classNameInAsm, int index) {
@@ -97,14 +99,14 @@ public class InstantProguardMap {
     }
 
     public void putMethod(String mtdSig) {
-//        Integer oriIndex=nowClass.getMtdIndex(mtdSig);
-//        if(oriIndex!=null){
-//
-//
-//        }
-        nowMtdIndex++;
-        putMethod(mtdSig, mtdMax + nowMtdIndex);
-
+        if (nowClass == null) {
+            throw new GradleException("nowClass is null, you must invoke putClass before putMethod");
+        }
+        Integer oriIndex = nowClass.getMtdIndex(mtdSig);
+        if (oriIndex == null) {
+            nowMtdIndex++;
+            putMethod(mtdSig, mtdMax + nowMtdIndex);
+        }
     }
 
     public void putMethod(String mtdSig, int index) {
@@ -115,12 +117,14 @@ public class InstantProguardMap {
     }
 
 
+    @Deprecated
     public void putField(String fieldSig) {
         nowFieldIndex++;
         putField(fieldSig, fieldMax + nowFieldIndex);
 
     }
 
+    @Deprecated
     public void putField(String fieldSig, int index) {
         if (nowClass == null) {
             throw new GradleException("nowClass is null, you must invoke putClass before putMethod");

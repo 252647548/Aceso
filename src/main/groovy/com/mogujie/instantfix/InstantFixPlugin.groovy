@@ -21,7 +21,6 @@ class InstantFixPlugin implements Plugin<Project> {
 
     static def MATCHER_R = '''.*/R\\$.*\\.class|.*/R\\.class'''
     Extension config
-    boolean isHotfix = false
     Project project
 
     @Override
@@ -33,12 +32,11 @@ class InstantFixPlugin implements Plugin<Project> {
         project.afterEvaluate {
             config = project.extensions.findByName("InstantFix") as Extension
 
-
             if (config.disable == false) {
-                if (config.instantMappingFile == null) {
-                    config.instantMappingFile = new File(project.projectDir, "instant-mapping.txt")
+                if (config.instantMappingPath == null) {
+                    config.instantMappingPath = new File(project.projectDir, "instant-mapping.txt").absolutePath
                 }
-                if (!Utils.checkFile(config.instantMappingFile)) {
+                if (!Utils.checkFile(config.instantMappingPath)) {
                     Log.e("instant mapping not found!")
                 }
 
@@ -66,22 +64,35 @@ class InstantFixPlugin implements Plugin<Project> {
 
         project.tasks.create("instantFix" + varName, HotFixTask, new HotFixTask.HotFixAction(varName))
 
-        isHotfix = InstantUtil.isInstantFix(project)
-
-        if (isHotfix) {
-            Log.i "is hotfix "
-
+        int status = InstantUtil.isHotFix(project, config)
+        InstantFixWrapper.filter = initFilter()
+        if (status == InstantUtil.NEW_HOT_FIX) {
+            Log.i "is new hotfix "
             if (jarMergingTask == null) {
                 doPatchWhenJarNotExists(varName, varDirName)
             } else {
                 doPatchWhenJarExists(jarMergingTask, varName, varDirName)
             }
             return
-        } else {
-            if (config.expandScope) {
-//                expandScope(jarMergingTask);
+        }
+        if (status == InstantUtil.OLD_HOT_FIX) {
+            if (config.disableOldFixDebug && varName.toLowerCase().contains("debug")) {
                 return;
             }
+
+            Log.i "is old hotfix "
+            if (jarMergingTask == null) {
+                Log.w "jarMergingTask is null, we will not do anything."
+            } else {
+                Log.w "jarMergingTask is exist,we will expand class scope."
+                if (jarMergingTask.name.startsWith("transformClassesAndResourcesWithProguardFor")) {
+                    ProguardTool.instance().initProguardMap(jarMergingTask.transform.getMappingFile())
+                }
+                expandWhenJarExists(jarMergingTask, varName, varDirName)
+            }
+
+        } else {
+
             if (config.disableInstrumentDebug && varName.toLowerCase().contains("debug")) {
                 return;
             }
@@ -105,7 +116,6 @@ class InstantFixPlugin implements Plugin<Project> {
                     ProguardTool.instance().initProguardMap(jarMergingTask.transform.getMappingFile())
                 }
 
-                InstantFixWrapper.filter = initFilter()
                 doInstrumentClass(varName, varDirName, jarMergingTask)
             }
 
@@ -113,14 +123,23 @@ class InstantFixPlugin implements Plugin<Project> {
 
     }
 
-    private void expandScope(def jarMergingTask, String varName) {
-        if (jarMergingTask != null) {
-            getCombindJar(jarMergingTask, varName)
-        } else {
 
+    private void expandWhenJarExists(def jarMergingTask, String varName, String varDirName) {
+        jarMergingTask.outputs.upToDateWhen { return false }
+        jarMergingTask.doLast {
+
+            File combindJar = getCombindJar(jarMergingTask, varName)
+            Log.i "combindJar is " + combindJar
+            File combindBackupJar = InstantUtil.initFile(project.buildDir, "intermediates/jar-backup/${varDirName}/" + combindJar.name)
+
+            File fixJar = InstantUtil.initFile(project.buildDir, "intermediates/jar-hotfix/${varDirName}/" + combindJar.name)
+
+            InstantFixWrapper.expandScope(combindJar, fixJar)
+
+            InstantUtil.copy(project, combindJar, combindBackupJar.parentFile)
+
+            InstantUtil.copy(project, fixJar, combindJar.parentFile)
         }
-
-
     }
 
     private void doInstrumentClass(String varName, String varDirName, def jarMergingTask) {
@@ -146,7 +165,7 @@ class InstantFixPlugin implements Plugin<Project> {
         ArrayList<File> classPath = new ArrayList<>()
         classPath.add(androidJar)
         File mappingFile = new File(project.buildDir, "intermediates/instant-mapping/${varDirName}/mapping.txt")
-        InstantFixWrapper.instrument(combindJar, instrumentJar, classPath, mappingFile)
+        InstantFixWrapper.instrument(combindJar, instrumentJar, classPath, mappingFile, config.instantMappingPath)
 
         //backup origin jar and overlay origin jar
         File classBackupDir = new File(project.buildDir, "intermediates/jar-backup/${varDirName}")
@@ -178,7 +197,7 @@ class InstantFixPlugin implements Plugin<Project> {
             classPath.add(new File(InstantUtil.getAndroidSdkPath(project)))
             classPath.add(config.modifiedJar)
 
-            InstantFixWrapper.instantFix(tempJarFile, jarFile, classPath, null, config.instantMappingFile)
+            InstantFixWrapper.instantFix(tempJarFile, jarFile, classPath, null, config.instantMappingPath)
             Utils.clearDir(classTask.destinationDir)
             project.copy {
                 from project.zipTree(jarFile)
@@ -207,7 +226,7 @@ class InstantFixPlugin implements Plugin<Project> {
 //            classPath.addAll(classTask.classpath.files)
             classPath.add(config.modifiedJar)
             classPath.add(new File(InstantUtil.getAndroidSdkPath(project)))
-            InstantFixWrapper.instantFix(combindJar, fixJar, classPath, proguardMap, config.instantMappingFile)
+            InstantFixWrapper.instantFix(combindJar, fixJar, classPath, proguardMap, config.instantMappingPath)
 
             InstantUtil.copy(project, combindJar, combindBackupJar.parentFile)
 
@@ -216,8 +235,7 @@ class InstantFixPlugin implements Plugin<Project> {
     }
 
 
-    public InstantFixWrapper.InstrumentFilter initFilter() {
-        HashMap
+    public static InstantFixWrapper.InstrumentFilter initFilter() {
 
         return new InstantFixWrapper.InstrumentFilter() {
             @Override
@@ -246,8 +264,7 @@ class InstantFixPlugin implements Plugin<Project> {
 //                    return false
 //                }
 
-//                Log.i("filter accept => " + name)
-                if (name.startsWith("com/android/tools/fd/runtime")||name.startsWith("com/xiaomi/")
+                if (name.startsWith("com/android/tools/fd/runtime") || name.startsWith("com/xiaomi/")
                         || name.startsWith("org/apache/")
                         || name.startsWith("com/android/")
                         || name.startsWith("com/google/")

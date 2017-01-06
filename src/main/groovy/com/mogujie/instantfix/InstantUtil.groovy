@@ -37,14 +37,26 @@ class InstantUtil {
         return apk
     }
 
-    public static boolean isInstantFix(Project project) {
-        return project.gradle.getStartParameter().taskNames.any { taskName ->
+    public static final int NEW_HOT_FIX = 2;
+    public static final int OLD_HOT_FIX = 1;
+    public static final int NO_HOT_FIX = 0;
+
+    public static int isHotFix(Project project, Extension config) {
+        boolean isNewHotfix = project.gradle.getStartParameter().taskNames.any { taskName ->
             Log.i "task " + taskName
             if (taskName.toLowerCase().startsWith("instantfix")) {
                 return true
             }
         }
+        if (isNewHotfix) {
+            return NEW_HOT_FIX;
+        }
+        if (config.oldHotfix) {
+            return OLD_HOT_FIX;
+        }
+        return NO_HOT_FIX;
     }
+
 
     public static boolean isProguard(Project project, String varName) {
         return (project.tasks.findByName("transformClassesAndResourcesWithProguardFor${varName}") != null)

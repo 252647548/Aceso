@@ -15,6 +15,7 @@ public class TransformAccessClassNode extends ClassNode {
     }
 
 
+
     @Override
     public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
         access = InstantRunTool.transformAccessForInstantRun(access);

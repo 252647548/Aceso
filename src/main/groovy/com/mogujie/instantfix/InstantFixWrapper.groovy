@@ -1,16 +1,17 @@
 package com.mogujie.instantfix
-
 import com.google.common.collect.ImmutableList
 import com.google.common.collect.Iterables
+import com.mogujie.groovy.traversal.ZipTraversal
 import com.mogujie.groovy.util.Log
 import com.mogujie.groovy.util.Utils
 import instant.*
 import org.gradle.api.GradleException
+import org.objectweb.asm.ClassReader
+import org.objectweb.asm.ClassWriter
 
 import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
 import java.util.zip.ZipOutputStream
-
 /**
  * Created by wangzhi on 16/12/5.
  */
@@ -22,16 +23,47 @@ class InstantFixWrapper {
 
     static InstrumentFilter filter
 
+
     public
-    static void instrument(File combindJar, File supportJar, ArrayList<File> classPath, File mappingFile) {
+    static void expandScope(File combindJar, File instrumentJar) {
+
+        ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(instrumentJar))
+        ZipTraversal.traversal(combindJar, new ZipTraversal.Callback() {
+            @Override
+            void oneEntry(ZipEntry entry, byte[] bytes) {
+                Log.i("entry: "+entry)
+                if(!filter.accept(entry.getName())){
+                    return;
+                }
+                Log.i("accept entry: "+entry)
+                zos.putNextEntry(new ZipEntry(entry.name))
+                ClassReader cr = new ClassReader(bytes);
+                TransformAccessClassNode cn=new TransformAccessClassNode()
+                cr.accept(cn,0)
+                ClassWriter cw=new ClassWriter( 0)
+                cn.accept(cw)
+                zos.write(cw.toByteArray())
+                zos.closeEntry()
+            }
+        })
+        zos.close()
+    }
+
+    public
+    static void instrument(File combindJar, File supportJar, ArrayList<File> classPath, File mappingFile, String instantFixMapping) {
         InstantProguardMap.instance().reset()
+        if (Utils.checkFile(instantFixMapping)) {
+            Log.i("apply instant mapping: " + instantFixMapping)
+            InstantProguardMap.instance().readMapping(new File(instantFixMapping))
+        }
+
         inject(combindJar, supportJar, classPath, null, IncrementalSupportVisitor.VISITOR_BUILDER, false)
         InstantProguardMap.instance().printMapping(mappingFile)
     }
 
     public
-    static void instantFix(File combindJar, File instrumentJar, ArrayList<File> classPathList, HashMap<String, String> proguardMap, File instantFixMapping) {
-        InstantProguardMap.instance().readMapping(instantFixMapping)
+    static void instantFix(File combindJar, File instrumentJar, ArrayList<File> classPathList, HashMap<String, String> proguardMap, String instantFixMapping) {
+        InstantProguardMap.instance().readMapping(new File(instantFixMapping))
         inject(combindJar, instrumentJar, classPathList, proguardMap, IncrementalChangeVisitor.VISITOR_BUILDER, true)
     }
 
@@ -87,7 +119,7 @@ class InstantFixWrapper {
             }
             if (isHotfix) {
                 zos.putNextEntry(new ZipEntry("com/android/tools/fd/runtime/AppPatchesLoaderImpl.class"))
-                Log.i("fix ClassList: " + fixClassList)
+                Log.v("fix ClassList: " + fixClassList)
                 byte[] bytes = getPatchesLoaderClass(fixClassList)
                 zos.write(bytes)
                 zos.closeEntry()
@@ -116,7 +148,7 @@ class InstantFixWrapper {
 //                if (proguardMap != null) {
 //                    realName = proguardMap.get(entryName)
 //                }
-                if (classJar.getEntry(entryName)!=null) {
+                if (classJar.getEntry(entryName) != null) {
                     isNewClass = false
                 }
 
@@ -191,7 +223,7 @@ class InstantFixWrapper {
     }
 
 
-    public static void expandCode(){
+    public static void expandCode() {
 
     }
 
