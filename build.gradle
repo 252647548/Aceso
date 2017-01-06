@@ -29,13 +29,13 @@ dependencies {
     compile gradleApi()
     compile localGroovy()
     compile 'com.android.tools.build:gradle:2.0.0'
-    compile 'com.mogujie.base:groovy:1.0.0.9'
+    compile 'com.mogujie.base:groovy:1.0.0.9'q
 }
 
 
 upinfo {
     groupId = 'com.mogujie.gradle'
     artifactId = 'instantfix'
-    version = '0.0.2.6'
+    version = '0.0.3'
 }
 
