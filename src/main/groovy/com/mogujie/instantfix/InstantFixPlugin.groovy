@@ -85,9 +85,7 @@ class InstantFixPlugin implements Plugin<Project> {
                 Log.w "jarMergingTask is null, we will not do anything."
             } else {
                 Log.w "jarMergingTask is exist,we will expand class scope."
-                if (jarMergingTask.name.startsWith("transformClassesAndResourcesWithProguardFor")) {
-                    ProguardTool.instance().initProguardMap(jarMergingTask.transform.getMappingFile())
-                }
+
                 expandWhenJarExists(jarMergingTask, varName, varDirName)
             }
 
@@ -127,7 +125,9 @@ class InstantFixPlugin implements Plugin<Project> {
     private void expandWhenJarExists(def jarMergingTask, String varName, String varDirName) {
         jarMergingTask.outputs.upToDateWhen { return false }
         jarMergingTask.doLast {
-
+            if (jarMergingTask.name.startsWith("transformClassesAndResourcesWithProguardFor")) {
+                ProguardTool.instance().initProguardMap(jarMergingTask.transform.getMappingFile())
+            }
             File combindJar = getCombindJar(jarMergingTask, varName)
             Log.i "combindJar is " + combindJar
             File combindBackupJar = InstantUtil.initFile(project.buildDir, "intermediates/jar-backup/${varDirName}/" + combindJar.name)
@@ -248,7 +248,9 @@ class InstantFixPlugin implements Plugin<Project> {
                     return false
                 }
 
-                name = ProguardTool.instance().getProguardMap().get(name)
+                if (ProguardTool.instance().getProguardMap().size() > 0) {
+                    name = ProguardTool.instance().getProguardMap().get(name)
+                }
 
 //                if (name.startsWith("com/astonmartin/image")
 //                        || name.startsWith("com/squareup/picasso")
