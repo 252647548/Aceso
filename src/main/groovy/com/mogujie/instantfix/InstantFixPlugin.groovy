@@ -9,6 +9,7 @@ import com.android.build.gradle.tasks.factory.AndroidJavaCompile
 import com.android.builder.signing.SignedJarBuilder
 import com.mogujie.groovy.util.Log
 import com.mogujie.groovy.util.Utils
+import instant.InstantRunTool
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.Plugin
@@ -47,6 +48,9 @@ class InstantFixPlugin implements Plugin<Project> {
                 if (!Utils.checkFile(config.modifiedJar)) {
                     Log.e("modifie jar  not found!")
                 }
+
+                InstantRunTool.setMethodLevelFix(config.methodLevelFix)
+
                 project.android.applicationVariants.all { variant ->
                     doIt(project, variant)
                 }
@@ -64,9 +68,9 @@ class InstantFixPlugin implements Plugin<Project> {
 
         project.tasks.create("instantFix" + varName, HotFixTask, new HotFixTask.HotFixAction(varName))
 
-        int status = InstantUtil.isHotFix(project, config)
+        int status = Util.isHotFix(project, config)
         InstantFixWrapper.filter = initFilter()
-        if (status == InstantUtil.NEW_HOT_FIX) {
+        if (status == Util.NEW_HOT_FIX) {
             Log.i "is new hotfix "
             if (jarMergingTask == null) {
                 doPatchWhenJarNotExists(varName, varDirName)
@@ -75,7 +79,7 @@ class InstantFixPlugin implements Plugin<Project> {
             }
             return
         }
-        if (status == InstantUtil.OLD_HOT_FIX) {
+        if (status == Util.OLD_HOT_FIX) {
             if (config.disableOldFixDebug && varName.toLowerCase().contains("debug")) {
                 return;
             }
@@ -130,15 +134,15 @@ class InstantFixPlugin implements Plugin<Project> {
             }
             File combindJar = getCombindJar(jarMergingTask, varName)
             Log.i "combindJar is " + combindJar
-            File combindBackupJar = InstantUtil.initFile(project.buildDir, "intermediates/jar-backup/${varDirName}/" + combindJar.name)
+            File combindBackupJar = Util.initFile(project.buildDir, "intermediates/jar-backup/${varDirName}/" + combindJar.name)
 
-            File fixJar = InstantUtil.initFile(project.buildDir, "intermediates/jar-hotfix/${varDirName}/" + combindJar.name)
+            File fixJar = Util.initFile(project.buildDir, "intermediates/jar-hotfix/${varDirName}/" + combindJar.name)
 
             InstantFixWrapper.expandScope(combindJar, fixJar)
 
-            InstantUtil.copy(project, combindJar, combindBackupJar.parentFile)
+            Util.copy(project, combindJar, combindBackupJar.parentFile)
 
-            InstantUtil.copy(project, fixJar, combindJar.parentFile)
+            Util.copy(project, fixJar, combindJar.parentFile)
         }
     }
 
@@ -150,13 +154,13 @@ class InstantFixPlugin implements Plugin<Project> {
         File combindJar = getCombindJar(jarMergingTask, varName)
         //instrument jar
         File instrumentJar
-        if (InstantUtil.isProguard(project, varName)) {
-            instrumentJar = InstantUtil.initFile(project.buildDir, "intermediates/jar-instrument/${varDirName}/main.jar")
+        if (Util.isProguard(project, varName)) {
+            instrumentJar = Util.initFile(project.buildDir, "intermediates/jar-instrument/${varDirName}/main.jar")
         } else {
-            instrumentJar = InstantUtil.initFile(project.buildDir, "intermediates/jar-instrument/${varDirName}/combined.jar")
+            instrumentJar = Util.initFile(project.buildDir, "intermediates/jar-instrument/${varDirName}/combined.jar")
         }
 
-        File androidJar = new File(InstantUtil.getAndroidSdkPath(project))
+        File androidJar = new File(Util.getAndroidSdkPath(project))
         if (!androidJar.exists()) {
             throw new RuntimeException("not found android jar.")
         }
@@ -170,19 +174,19 @@ class InstantFixPlugin implements Plugin<Project> {
         //backup origin jar and overlay origin jar
         File classBackupDir = new File(project.buildDir, "intermediates/jar-backup/${varDirName}")
 
-        InstantUtil.copy(project, combindJar, classBackupDir)
+        Util.copy(project, combindJar, classBackupDir)
 
         combindJar.delete()
 
-        InstantUtil.copy(project, instrumentJar, combindJar.parentFile)
+        Util.copy(project, instrumentJar, combindJar.parentFile)
     }
 
     private void doPatchWhenJarNotExists(String varName, String varDirName) {
         Log.i("jarMergingTask is null")
         AndroidJavaCompile classTask = project.tasks.findByName("compile${varName}JavaWithJavac")
         classTask.doLast {
-            File tempJarFile = InstantUtil.initFile(project.buildDir, "intermediates/class-hotfix-jar/${varDirName}/backup.jar")
-            File jarFile = InstantUtil.initFile(project.buildDir, "intermediates/class-hotfix-jar/${varDirName}/allclasses.jar")
+            File tempJarFile = Util.initFile(project.buildDir, "intermediates/class-hotfix-jar/${varDirName}/backup.jar")
+            File jarFile = Util.initFile(project.buildDir, "intermediates/class-hotfix-jar/${varDirName}/allclasses.jar")
             JarMerger jarMerger = new JarMerger(tempJarFile)
             jarMerger.setFilter(new SignedJarBuilder.IZipEntryFilter() {
                 @Override
@@ -194,7 +198,7 @@ class InstantFixPlugin implements Plugin<Project> {
             jarMerger.addFolder(classTask.destinationDir)
             jarMerger.close()
             ArrayList<File> classPath = new ArrayList()
-            classPath.add(new File(InstantUtil.getAndroidSdkPath(project)))
+            classPath.add(new File(Util.getAndroidSdkPath(project)))
             classPath.add(config.modifiedJar)
 
             InstantFixWrapper.instantFix(tempJarFile, jarFile, classPath, null, config.instantMappingPath)
@@ -219,18 +223,18 @@ class InstantFixPlugin implements Plugin<Project> {
 
             File combindJar = getCombindJar(jarMergingTask, varName)
             Log.i "combindJar is " + combindJar
-            File combindBackupJar = InstantUtil.initFile(project.buildDir, "intermediates/jar-backup/${varDirName}/" + combindJar.name)
+            File combindBackupJar = Util.initFile(project.buildDir, "intermediates/jar-backup/${varDirName}/" + combindJar.name)
 
-            File fixJar = InstantUtil.initFile(project.buildDir, "intermediates/jar-hotfix/${varDirName}/" + combindJar.name)
+            File fixJar = Util.initFile(project.buildDir, "intermediates/jar-hotfix/${varDirName}/" + combindJar.name)
             ArrayList<File> classPath = new ArrayList()
 //            classPath.addAll(classTask.classpath.files)
             classPath.add(config.modifiedJar)
-            classPath.add(new File(InstantUtil.getAndroidSdkPath(project)))
+            classPath.add(new File(Util.getAndroidSdkPath(project)))
             InstantFixWrapper.instantFix(combindJar, fixJar, classPath, proguardMap, config.instantMappingPath)
 
-            InstantUtil.copy(project, combindJar, combindBackupJar.parentFile)
+            Util.copy(project, combindJar, combindBackupJar.parentFile)
 
-            InstantUtil.copy(project, fixJar, combindJar.parentFile)
+            Util.copy(project, fixJar, combindJar.parentFile)
         }
     }
 
@@ -300,7 +304,7 @@ class InstantFixPlugin implements Plugin<Project> {
         Log.i("jarMergingDir is " + jarMergingDir.absolutePath)
         Transform transform = jarMergingTask.transform
         File combindJar = null
-        if (InstantUtil.isProguard(project, varName)) {
+        if (Util.isProguard(project, varName)) {
             combindJar = IntermediateFolderUtils.getContentLocation(jarMergingDir, "main", transform.getOutputTypes(), transform.getScopes(), Format.JAR);
         } else {
             combindJar = IntermediateFolderUtils.getContentLocation(jarMergingDir, "combined", transform.getOutputTypes(), transform.getScopes(), Format.JAR);

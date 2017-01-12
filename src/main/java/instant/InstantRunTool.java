@@ -109,4 +109,15 @@ public class InstantRunTool {
         // TODO: only do this on KitKat?
         return fixedVisibility | Opcodes.ACC_SUPER;
     }
+
+    private static boolean sMethodLevelFix = true;
+
+    public static void setMethodLevelFix(boolean methodLevelFix) {
+        sMethodLevelFix = methodLevelFix;
+    }
+
+    public static boolean isMethodLevelFix() {
+        return sMethodLevelFix;
+    }
+
 }

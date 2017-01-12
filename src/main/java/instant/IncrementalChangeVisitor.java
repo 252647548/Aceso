@@ -282,9 +282,9 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
                             + methodInsnNode.desc);
                     if (getMethodAccessRight(methodInsnNode.owner, methodInsnNode.name
                             , methodInsnNode.desc) == AccessRight.PUBLIC) {
-                        int removeSize=removeList.size();
-                        removeList.remove(removeSize-1);
-                        removeList.remove(removeSize-2);
+                        int removeSize = removeList.size();
+                        removeList.remove(removeSize - 1);
+                        removeList.remove(removeSize - 2);
                     } else {
                         Log.i("we will remove ins : " + removeList.size());
                         for (AbstractInsnNode removeNode : removeList) {
@@ -365,13 +365,16 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
             this.isStatic = isStatic;
             this.isConstructor = isConstructor;
             this.originalMtdSig = originalMtdSig;
-            fixMtds.add(originalMtdSig);
+            if (!InstantRunTool.isMethodLevelFix()) {
+                fixMtds.add(originalMtdSig);
+            }
         }
 
         @Override
         public AnnotationVisitor visitAnnotation(String desc, boolean visible) {
 
-            if (desc.equals(FIXMTD_ANNOTATION_TYPE.getDescriptor())) {
+            if (InstantRunTool.isMethodLevelFix()
+                    && desc.equals(FIXMTD_ANNOTATION_TYPE.getDescriptor())) {
                 fixMtds.add(originalMtdSig);
             }
             return super.visitAnnotation(desc, visible);

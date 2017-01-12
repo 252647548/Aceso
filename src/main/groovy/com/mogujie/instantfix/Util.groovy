@@ -8,7 +8,7 @@ import org.gradle.api.Task
 /**
  * Created by wangzhi on 16/12/8.
  */
-class InstantUtil {
+class Util {
 
     public static initFile(File dir, String name) {
         File file = new File(dir, name)
@@ -61,6 +61,7 @@ class InstantUtil {
     public static boolean isProguard(Project project, String varName) {
         return (project.tasks.findByName("transformClassesAndResourcesWithProguardFor${varName}") != null)
     }
+
 
 
 }

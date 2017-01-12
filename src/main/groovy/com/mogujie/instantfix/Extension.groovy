@@ -12,6 +12,7 @@ public class Extension {
     public boolean disableInstrumentDebug =true
     public boolean disableOldFixDebug =true
     public boolean oldHotfix =false
+    public boolean methodLevelFix =true
 
 
     @Override
