@@ -17,12 +17,11 @@
 package instant;
 
 
+import com.mogujie.groovy.util.Log;
 import org.objectweb.asm.*;
 import org.objectweb.asm.commons.GeneratorAdapter;
 import org.objectweb.asm.commons.Method;
-import org.objectweb.asm.tree.ClassNode;
-import org.objectweb.asm.tree.FieldNode;
-import org.objectweb.asm.tree.MethodNode;
+import org.objectweb.asm.tree.*;
 
 import java.util.*;
 
@@ -92,13 +91,14 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
 
     HashSet<String> priNativeMtdSet = new HashSet<>();
     HashSet<String> priSyncMtdSet = new HashSet<>();
+    List<MethodNode> methodNodes = null;
 
     public IncrementalChangeVisitor(
             @NonNull ClassNode classNode,
             @NonNull List<ClassNode> parentNodes,
             @NonNull ClassVisitor classVisitor) {
         super(classNode, parentNodes, classVisitor);
-
+        methodNodes = classNode.methods;
         for (MethodNode methodNode : classNode.methods) {
             if ((methodNode.access & (Opcodes.ACC_NATIVE | Opcodes.ACC_PRIVATE)) == (Opcodes.ACC_NATIVE | Opcodes.ACC_PRIVATE)) {
                 priNativeMtdSet.add(methodNode.name + "." + methodNode.desc);
@@ -225,10 +225,108 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
         } else {
             String newName = isStatic ? computeOverrideMethodName(name, desc) : name;
             MethodVisitor original = super.visitMethod(access, newName, newDesc, signature, exceptions);
+            for (MethodNode methodNode : methodNodes) {
+                if (desc.equals(methodNode.desc) && name.equals(methodNode.name)) {
+                    processNew(methodNode);
+                }
+            }
 
             return new ISVisitor(original, access, newName, newDesc,
                     InstantRunTool.getMtdSig(name, desc), isStatic, false /* isConstructor */);
         }
+    }
+
+    private void processNew(MethodNode methodNode) {
+        int size = methodNode.instructions.size();
+        List<AbstractInsnNode> removeList = new ArrayList<>();
+        for (int i = 0; i < size; i++) {
+            insnMachine(methodNode.instructions.get(i), removeList);
+        }
+        if (removeList.size() % 2 != 0) {
+            throw new RuntimeException("some error in remove new and dup ins");
+        }
+        for (AbstractInsnNode removeNode : removeList) {
+            Log.i("finally remove insn node :  " + removeNode.getOpcode() + "  " + removeNode.getType());
+            methodNode.instructions.remove(removeNode);
+        }
+    }
+
+    public static final int INIT = 0;
+    public static final int FIND_NEW = 1;
+    public static final int FIND_NEW_AND_DUP = 2;
+    private int status = INIT;
+
+    private void insnMachine(AbstractInsnNode node, List<AbstractInsnNode> removeList) {
+        if (node.getOpcode() == Opcodes.NEW) {
+            if (status == INIT) {
+                status = FIND_NEW;
+                removeList.add(node);
+            } else {
+                throw new RuntimeException("find new in status " + status);
+            }
+        }
+
+        if (node.getOpcode() == Opcodes.DUP) {
+            if (status == FIND_NEW) {
+                status = INIT;
+                removeList.add(node);
+            }
+        }
+
+        if (node.getOpcode() == Opcodes.INVOKESPECIAL
+                && node instanceof MethodInsnNode) {
+            if (status == INIT) {
+                MethodInsnNode methodInsnNode = (MethodInsnNode) node;
+                if ("<init>".equals(methodInsnNode.name)) {
+                    Log.i("find new invoke : " + methodInsnNode.owner + " " + methodInsnNode.name + " "
+                            + methodInsnNode.desc);
+                    if (getMethodAccessRight(methodInsnNode.owner, methodInsnNode.name
+                            , methodInsnNode.desc) == AccessRight.PUBLIC) {
+                        int removeSize=removeList.size();
+                        removeList.remove(removeSize-1);
+                        removeList.remove(removeSize-2);
+                    } else {
+                        Log.i("we will remove ins : " + removeList.size());
+                        for (AbstractInsnNode removeNode : removeList) {
+                            Log.i("\t " + removeNode.getOpcode() + "  " + removeNode.getType());
+
+                        }
+                    }
+                }
+
+
+            }
+        }
+
+
+    }
+
+    /**
+     * Returns the actual method access right or a best guess if we don't have access to the
+     * method definition.
+     *
+     * @param owner the method owner class
+     * @param name  the method name
+     * @param desc  the method signature
+     * @return the {@link AccessRight} for that method.
+     */
+    private AccessRight getMethodAccessRight(String owner, String name, String desc) {
+        AccessRight accessRight;
+        if (owner.equals(visitedClassName)) {
+            MethodNode methodByName = getMethodByName(name, desc);
+            if (methodByName == null) {
+                // we did not find the method invoked on ourselves, which mean that it really
+                // is a parent class method invocation and we just don't have access to it.
+                // the most restrictive access right in that case is protected.
+                return AccessRight.PROTECTED;
+            }
+            accessRight = AccessRight.fromNodeAccess(methodByName.access);
+        } else {
+            // we are accessing another class method, and since we make all protected and
+            // package-private methods public, we can safely assume it is public.
+            accessRight = AccessRight.PUBLIC;
+        }
+        return accessRight;
     }
 
     @Override
@@ -267,6 +365,7 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
             this.isStatic = isStatic;
             this.isConstructor = isConstructor;
             this.originalMtdSig = originalMtdSig;
+            fixMtds.add(originalMtdSig);
         }
 
         @Override
@@ -689,35 +788,13 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
 
         @Override
         public void visitTypeInsn(int opcode, String s) {
-            if (opcode == Opcodes.NEW) {
-                // state can only normal or dup_after new
-                if (state == MachineState.AFTER_NEW) {
-                    throw new RuntimeException("Panic, two NEW opcode without a DUP");
-                }
 
-                if (isInSamePackage(s)) {
-                    // this is a new allocation in the same package, this could be protected or
-                    // package private class, we must go through reflection, otherwise not.
-                    // set our state so we swallow the next DUP we encounter.
-                    state = MachineState.AFTER_NEW;
-
-                    // swallow the NEW, we will also swallow the DUP associated with the new
-                    return;
-                }
-            }
             super.visitTypeInsn(opcode, s);
         }
 
         @Override
         public void visitInsn(int opcode) {
-            // check the last object allocation we encountered, if this is in the same package
-            // we need to go through reflection and should therefore remove the DUP, otherwise
-            // we leave it.
-            if (opcode == Opcodes.DUP && state == MachineState.AFTER_NEW) {
 
-                state = MachineState.NORMAL;
-                return;
-            }
             super.visitInsn(opcode);
         }
 
@@ -738,8 +815,8 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
          */
         private boolean handleConstructor(String owner, String name, String desc) {
 
-            if (isInSamePackage(owner)) {
-
+            AccessRight accessRight = getMethodAccessRight(owner, name, desc);
+            if (accessRight != AccessRight.PUBLIC) {
                 Type expectedType = Type.getType("L" + owner + ";");
                 pushMethodRedirectArgumentsOnStack(name, desc);
 
@@ -756,6 +833,8 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
             } else {
                 return false;
             }
+
+
         }
 
         @Override
@@ -777,34 +856,6 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
             if (DEBUG) {
                 System.out.println("Method visit end");
             }
-        }
-
-        /**
-         * Returns the actual method access right or a best guess if we don't have access to the
-         * method definition.
-         *
-         * @param owner the method owner class
-         * @param name  the method name
-         * @param desc  the method signature
-         * @return the {@link AccessRight} for that method.
-         */
-        private AccessRight getMethodAccessRight(String owner, String name, String desc) {
-            AccessRight accessRight;
-            if (owner.equals(visitedClassName)) {
-                MethodNode methodByName = getMethodByName(name, desc);
-                if (methodByName == null) {
-                    // we did not find the method invoked on ourselves, which mean that it really
-                    // is a parent class method invocation and we just don't have access to it.
-                    // the most restrictive access right in that case is protected.
-                    return AccessRight.PROTECTED;
-                }
-                accessRight = AccessRight.fromNodeAccess(methodByName.access);
-            } else {
-                // we are accessing another class method, and since we make all protected and
-                // package-private methods public, we can safely assume it is public.
-                accessRight = AccessRight.PUBLIC;
-            }
-            return accessRight;
         }
 
 
