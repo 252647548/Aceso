@@ -256,20 +256,6 @@ class InstantFixPlugin implements Plugin<Project> {
                     name = ProguardTool.instance().getProguardMap().get(name)
                 }
 
-//                if (name.startsWith("com/astonmartin/image")
-//                        || name.startsWith("com/squareup/picasso")
-//                        || name.startsWith("com/nineold/animation")
-//                        || name.startsWith("com/nineold/util")
-//                        || name.startsWith("com/caches")
-//                        || name.startsWith("com/mogujie/base")
-//                        || name.startsWith("com/mogujie/home")
-//                        || name.startsWith("com/mogujie/mwpsdk")
-//                        || name.startsWith("com/facebook")) {
-//                    return true
-//                } else {
-//                    return false
-//                }
-
                 if (name.startsWith("com/android/tools/fd/runtime") || name.startsWith("com/xiaomi/")
                         || name.startsWith("org/apache/")
                         || name.startsWith("com/android/")
@@ -279,7 +265,6 @@ class InstantFixPlugin implements Plugin<Project> {
                     return false
                 }
                 return true
-
 
             }
         }
