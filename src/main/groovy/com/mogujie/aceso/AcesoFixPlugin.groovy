@@ -16,10 +16,10 @@ class AcesoFixPlugin extends AcesoBasePlugin {
 
     @Override
     protected void realApply() {
-        if (config.modifiedJar == null) {
-            config.modifiedJar = new File(project.projectDir, "modified.jar")
+        if (Utils.isStringEmpty(config.modifiedJar)) {
+            config.modifiedJar = new File(project.projectDir, "modified.jar").absolutePath
         }
-        if (!Utils.checkFile(config.modifiedJar)) {
+        if (!Utils.checkFile(new File(config.modifiedJar))) {
             Log.e("modifie jar  not found!")
         }
 
@@ -98,9 +98,9 @@ class AcesoFixPlugin extends AcesoBasePlugin {
             jarMerger.close()
             ArrayList<File> classPath = new ArrayList()
             classPath.add(new File(Util.getAndroidSdkPath(project)))
-            classPath.add(config.modifiedJar)
+            classPath.add(new File(config.modifiedJar))
 
-            HookWrapper.fix(tempJarFile, jarFile, classPath, null, config.acesoMappingPath)
+            HookWrapper.fix(tempJarFile, jarFile, classPath, null, config.acesoMapping)
             Utils.clearDir(classTask.destinationDir)
             project.copy {
                 from project.zipTree(jarFile)
@@ -127,9 +127,9 @@ class AcesoFixPlugin extends AcesoBasePlugin {
             File fixJar = Util.initFile(getFileInAceso("fix", varDirName, combindJar.name))
             ArrayList<File> classPath = new ArrayList()
 //            classPath.addAll(classTask.classpath.files)
-            classPath.add(config.modifiedJar)
+            classPath.add(new File(config.modifiedJar))
             classPath.add(new File(Util.getAndroidSdkPath(project)))
-            HookWrapper.fix(combindJar, fixJar, classPath, proguardMap, config.acesoMappingPath)
+            HookWrapper.fix(combindJar, fixJar, classPath, proguardMap, config.acesoMapping)
 
             Util.copy(project, combindJar, combindBackupJar.parentFile)
 

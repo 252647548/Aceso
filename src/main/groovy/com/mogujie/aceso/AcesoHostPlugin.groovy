@@ -71,7 +71,7 @@ class AcesoHostPlugin extends AcesoBasePlugin {
         classPath.add(androidJar)
 
         File mappingFile = getFileInAceso("mapping", varDirName, "mapping.txt")
-        HookWrapper.instrument(combindJar, instrumentJar, classPath, mappingFile, config.acesoMappingPath)
+        HookWrapper.instrument(combindJar, instrumentJar, classPath, mappingFile, config.acesoMapping)
 
         //backup origin jar and overlay origin jar
         File classBackupDir = getFileInAceso("backup-jar", varDirName, null)

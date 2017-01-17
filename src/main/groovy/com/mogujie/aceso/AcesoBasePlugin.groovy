@@ -26,10 +26,10 @@ abstract class AcesoBasePlugin implements Plugin<Project> {
         project.afterEvaluate {
             initExtensions()
             if (config.disable == false) {
-                if (config.acesoMappingPath == null) {
-                    config.acesoMappingPath = new File(project.projectDir, "aceso-mapping.txt").absolutePath
+                if (config.acesoMapping == null) {
+                    config.acesoMapping = new File(project.projectDir, "aceso-mapping.txt").absolutePath
                 }
-                if (!Utils.checkFile(config.acesoMappingPath)) {
+                if (!Utils.checkFile(config.acesoMapping)) {
                     Log.e("aceso mapping not found!")
                 }
                 HookWrapper.filter = initFilter()

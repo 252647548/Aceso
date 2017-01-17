@@ -6,12 +6,12 @@ package com.mogujie.aceso;
 public class Extension {
     //base plugin
     public boolean disable = false
-    public String acesoMappingPath
+    public String acesoMapping
     //host plugin
     public boolean disableInstrumentDebug = true
     public boolean ignoreWarning = false
     //fix plugin
-    public File modifiedJar
+    public String modifiedJar
     public boolean methodLevelFix = true
 
 }
