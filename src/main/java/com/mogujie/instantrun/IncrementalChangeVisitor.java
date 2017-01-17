@@ -214,7 +214,7 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
 
     private void processNew(MethodNode methodNode) {
         int size = methodNode.instructions.size();
-        List<AbstractInsnNode> removeList = new ArrayList<>();
+        List<AbstractInsnNode> removeList = new ArrayList();
         for (int i = 0; i < size; i++) {
             insnMachine(methodNode.instructions.get(i), removeList);
         }

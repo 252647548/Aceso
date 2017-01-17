@@ -21,12 +21,9 @@ import org.objectweb.asm.*;
 import org.objectweb.asm.commons.GeneratorAdapter;
 import org.objectweb.asm.commons.Method;
 import org.objectweb.asm.tree.ClassNode;
-import org.objectweb.asm.tree.FieldNode;
 import org.objectweb.asm.tree.LabelNode;
 import org.objectweb.asm.tree.MethodNode;
 
-import java.io.IOException;
-import java.io.ObjectStreamClass;
 import java.util.*;
 
 /**
@@ -146,15 +143,11 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
         return super.visitField(access, name, desc, signature, value);
     }
 
-    /**
-     * Insert Constructor specific logic({@link ConstructorRedirection} and
-     * {@link ConstructorBuilder}) for constructor redirecting or
-     * normal method redirecting ({@link MethodRedirection}) for other methods.
-     */
+
     @Override
     public MethodVisitor visitMethod(int access, String name, String desc, String signature,
                                      String[] exceptions) {
-        InstantProguardMap.instance().putMethod(InstantRunTool.getMtdSig(name, desc));
+        InstantProguardMap.instance().putMethod(visitedClassName,InstantRunTool.getMtdSig(name, desc));
         access = InstantRunTool.transformAccessForInstantRun(access);
 
         MethodVisitor defaultVisitor = super.visitMethod(access, name, desc, signature, exceptions);
@@ -193,7 +186,6 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
     }
 
 
-
     private class ISMethodVisitor extends GeneratorAdapter {
 
         private boolean disableRedirection = false;
@@ -202,9 +194,13 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
         private final List<Redirection> redirections;
         private final Map<Label, Redirection> resolvedRedirections;
         private final Label start;
+        private String name;
+        private String desc;
 
         public ISMethodVisitor(MethodVisitor mv, int access, String name, String desc) {
             super(Opcodes.ASM5, mv, access, name, desc);
+            this.name = name;
+            this.desc = desc;
             this.change = -1;
             this.redirections = new ArrayList();
             this.resolvedRedirections = new HashMap();
@@ -248,8 +244,8 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
                 change = newLocal(MTD_MAP_TYPE);
 //                visitFieldInsn(Opcodes.GETSTATIC, visitedClassName, "$change",
 //                        getRuntimeTypeName(MTD_MAP_TYPE));
-                push(new Integer(InstantProguardMap.instance().getNowClassIndex()));
-                push(new Integer(InstantProguardMap.instance().getNowMtdIndex()));
+                push(new Integer(InstantProguardMap.instance().getClassIndex(visitedClassName)));
+                push(new Integer(InstantProguardMap.instance().getMtdIndex(visitedClassName, InstantRunTool.getMtdSig(name, desc))));
                 invokeStatic(IncrementalVisitor.MTD_MAP_TYPE, Method.getMethod("com.android.tools.fd.runtime.IncrementalChange get(int,int)"));
 
                 storeLocal(change);

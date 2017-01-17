@@ -15,8 +15,6 @@ public class InstantProguardMap {
 
     private HashMap<String, ClassData> classesMap;
 
-    private ClassData nowClass;
-
     private int nowClassIndex;
 
     private int nowMtdIndex;
@@ -86,50 +84,55 @@ public class InstantProguardMap {
     }
 
     public void putClass(String classNameInAsm) {
-        nowClass = classesMap.get(classNameInAsm);
-        if (nowClass == null) {
+        if (classesMap.get(classNameInAsm) == null) {
             nowClassIndex++;
             putClass(classNameInAsm, classMax + nowClassIndex);
         }
     }
 
-    public void putClass(String classNameInAsm, int index) {
-        nowClass = new ClassData(index, new HashMap<String, Integer>(), new HashMap<String, Integer>());
-        classesMap.put(classNameInAsm, nowClass);
+    public ClassData putClass(String classNameInAsm, int index) {
+        ClassData classData = new ClassData(index,
+                new HashMap<String, Integer>(), new HashMap<String, Integer>());
+        classesMap.put(classNameInAsm, classData);
+        return classData;
     }
 
-    public void putMethod(String mtdSig) {
-        if (nowClass == null) {
-            throw new GradleException("nowClass is null, you must invoke putClass before putMethod");
+    public void putMethod(String classNameInAsm, String mtdSig) {
+        ClassData classData = classesMap.get(classNameInAsm);
+        if (classData == null) {
+            throw new RuntimeException("can not find class : " + classNameInAsm);
         }
-        Integer oriIndex = nowClass.getMtdIndex(mtdSig);
+        Integer oriIndex = classData.getMtdIndex(mtdSig);
         if (oriIndex == null) {
             nowMtdIndex++;
-            putMethod(mtdSig, mtdMax + nowMtdIndex);
+            putMethod(classData, mtdSig, mtdMax + nowMtdIndex);
         }
     }
 
-    public void putMethod(String mtdSig, int index) {
-        if (nowClass == null) {
-            throw new GradleException("nowClass is null, you must invoke putClass before putMethod");
-        }
-        nowClass.addMtd(mtdSig, index);
+    public void putMethod(ClassData classData, String mtdSig, int index) {
+        classData.addMtd(mtdSig, index);
+    }
+
+
+    public int getClassIndex(String classNameInAsm) {
+        ClassData classData = classesMap.get(classNameInAsm);
+        return classData == null ? -1 : classData.getIndex();
+    }
+
+    public int getMtdIndex(String classNameInAsm, String mtdSig) {
+        ClassData classData = classesMap.get(classNameInAsm);
+        return classData == null ? -1 : classData.getMtdIndex(mtdSig);
     }
 
 
     @Deprecated
     public void putField(String fieldSig) {
-        nowFieldIndex++;
-        putField(fieldSig, fieldMax + nowFieldIndex);
 
     }
 
     @Deprecated
     public void putField(String fieldSig, int index) {
-        if (nowClass == null) {
-            throw new GradleException("nowClass is null, you must invoke putClass before putMethod");
-        }
-        nowClass.addMtd(fieldSig, index);
+
     }
 
     public void readMapping(File mappingFile) throws IOException {
@@ -141,6 +144,7 @@ public class InstantProguardMap {
         int tempClassMax = 0;
         int tempMtdMax = 0;
         int tempFieldMax = 0;
+        ClassData nowClassData = null;
         while (true) {
             String line = reader.readLine();
 
@@ -166,11 +170,11 @@ public class InstantProguardMap {
                 // Is it a class mapping or a class member mapping?
                 if (line.endsWith(":")) {
                     MapEntry mapEntry = getEntryFromLine(line);
-                    putClass(mapEntry.name, mapEntry.index);
-                } else if (nowClass != null) {
+                    nowClassData = putClass(mapEntry.name, mapEntry.index);
+                } else if (nowClassData != null) {
                     MapEntry mapEntry = getEntryFromLine(line);
                     if (line.contains("(")) {
-                        putMethod(mapEntry.name, mapEntry.index);
+                        putMethod(nowClassData, mapEntry.name, mapEntry.index);
                     } else {
                         putField(mapEntry.name, mapEntry.index);
                     }
@@ -249,8 +253,7 @@ public class InstantProguardMap {
 
 
     public void reset() {
-        classesMap = new HashMap<>();
-        nowClass = null;
+        classesMap = new HashMap();
         nowClassIndex = 0;
         nowMtdIndex = 0;
         nowFieldIndex = 0;
