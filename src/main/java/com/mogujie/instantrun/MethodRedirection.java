@@ -45,7 +45,7 @@ public class MethodRedirection extends Redirection {
 //        mv.invokeVirtual(IncrementalVisitor.MTD_MAP_TYPE, Method.getMethod("Object get(int)"));
 
         mv.loadLocal(change);
-        mv.push(InstantProguardMap.instance().getNowMtdIndex());
+        mv.push(InstantProguardMap.instance().getMtdIndex(visitedClassName,InstantRunTool.getMtdSig(mtdName,mtdDesc)));
         ByteCodeUtils.newVariableArray(mv, ByteCodeUtils.toLocalVariables(types));
 
         // now invoke the generic dispatch method.
