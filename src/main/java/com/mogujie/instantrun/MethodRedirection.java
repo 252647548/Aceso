@@ -28,17 +28,17 @@ public class MethodRedirection extends Redirection {
     /**
      * The name of the method we redirect to.
      */
-    @NonNull
+
     private final String name;
 
-    MethodRedirection(@NonNull LabelNode label, String visitedClassName, String mtdName, String mtdDesc, @NonNull List<Type> types, @NonNull Type type, boolean isStatic) {
+    MethodRedirection( LabelNode label, String visitedClassName, String mtdName, String mtdDesc,  List<Type> types,  Type type, boolean isStatic) {
         super(label, visitedClassName, mtdName, mtdDesc, types, type, isStatic);
         this.name = mtdName + "." + mtdDesc;
     }
 
 
     @Override
-    protected void doRedirect(@NonNull GeneratorAdapter mv, int change) {
+    protected void doRedirect( GeneratorAdapter mv, int change) {
         // Push the three arguments
 //        mv.loadLocal(change);
 //        mv.push(InstantProguardMap.instance().getMtdIndex());

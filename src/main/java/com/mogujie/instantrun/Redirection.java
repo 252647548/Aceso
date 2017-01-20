@@ -32,13 +32,13 @@ public abstract class Redirection {
     /**
      * The position where this redirection should happen.
      */
-    @NonNull
+
     private final LabelNode label;
 
     /**
      * The types to redirect.
      */
-    @NonNull
+
     protected final List<Type> types;
 
     /**
@@ -56,7 +56,7 @@ public abstract class Redirection {
 
     protected final String newMtdDesc;
 
-    Redirection(@NonNull LabelNode label, String visitedClassName, @NonNull String mtdName, @NonNull String mtdDesc, @NonNull List<Type> types, @NonNull Type type, boolean isStatic) {
+    Redirection( LabelNode label, String visitedClassName,  String mtdName,  String mtdDesc,  List<Type> types,  Type type, boolean isStatic) {
         this.label = label;
         this.types = types;
         this.type = type;

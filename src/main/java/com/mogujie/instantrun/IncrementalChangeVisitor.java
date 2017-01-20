@@ -41,22 +41,22 @@ import java.util.*;
 public class IncrementalChangeVisitor extends IncrementalVisitor {
 
     public static final VisitorBuilder VISITOR_BUILDER = new IncrementalVisitor.VisitorBuilder() {
-        @NonNull
+
         @Override
-        public IncrementalVisitor build(@NonNull ClassNode classNode,
-                                        @NonNull List<ClassNode> parentNodes,
-                                        @NonNull ClassVisitor classVisitor) {
+        public IncrementalVisitor build( ClassNode classNode,
+                                         List<ClassNode> parentNodes,
+                                         ClassVisitor classVisitor) {
             return new IncrementalChangeVisitor(classNode, parentNodes, classVisitor);
         }
 
-        @NonNull
+
         @Override
-        public String getMangledRelativeClassFilePath(@NonNull String path) {
+        public String getMangledRelativeClassFilePath( String path) {
             // Remove .class (length 6) and replace with $override.class
             return path.substring(0, path.length() - 6) + OVERRIDE_SUFFIX + ".class";
         }
 
-        @NonNull
+
         @Override
         public OutputType getOutputType() {
             return OutputType.OVERRIDE;
@@ -91,9 +91,9 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
     List<MethodNode> methodNodes = null;
 
     public IncrementalChangeVisitor(
-            @NonNull ClassNode classNode,
-            @NonNull List<ClassNode> parentNodes,
-            @NonNull ClassVisitor classVisitor) {
+             ClassNode classNode,
+             List<ClassNode> parentNodes,
+             ClassVisitor classVisitor) {
         super(classNode, parentNodes, classVisitor);
         methodNodes = classNode.methods;
         for (MethodNode methodNode : classNode.methods) {
@@ -161,17 +161,7 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
         return super.visitAnnotation(desc, visible);
     }
 
-    /**
-     * Generates new delegates for all 'patchable' methods in the visited class. Delegates
-     * are static methods that do the same thing the visited code does, but from outside the class.
-     * For instance methods, the instance is passed as the first argument. Note that:
-     * <ul>
-     * <li>We ignore the class constructor as we don't support it right now</li>
-     * <li>We skip abstract methods.</li>
-     * <li>For constructors split the method body into super arguments and the rest of
-     * the method body, see {@link ConstructorBuilder}</li>
-     * </ul>
-     */
+
     @Override
     public MethodVisitor visitMethod(int access, String name, String desc, String signature,
                                      String[] exceptions) {
@@ -1036,7 +1026,7 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
      * @param type The type name of the other object, either a "com/var/Object" or a "[Type" one.
      * @return true if className and visited class are in the same java package.
      */
-    private boolean isInSamePackage(@NonNull String type) {
+    private boolean isInSamePackage( String type) {
 
         if (type.charAt(0) == '[') {
             return false;
@@ -1047,7 +1037,7 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
     /**
      * @return the package of the given / separated class name.
      */
-    private String getPackage(@NonNull String className) {
+    private String getPackage( String className) {
         int i = className.lastIndexOf('/');
         return i == -1 ? className : className.substring(0, i);
     }
@@ -1058,7 +1048,7 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
      * @param className a / separated class name
      * @return true if it is an ancestor, false otherwise.
      */
-    private boolean isAnAncestor(@NonNull String className) {
+    private boolean isAnAncestor( String className) {
         for (ClassNode parentNode : parentNodes) {
             if (parentNode.name.equals(className)) {
                 return true;
@@ -1071,8 +1061,8 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
      * Instance methods, when converted to static methods need to have the subject object as
      * the first parameter. If the method is static, it is unchanged.
      */
-    @NonNull
-    private String computeOverrideMethodDesc(@NonNull String desc, boolean isStatic) {
+
+    private String computeOverrideMethodDesc( String desc, boolean isStatic) {
         if (isStatic) {
             return desc;
         } else {
@@ -1088,8 +1078,8 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
      * over-approximation of the necessary renames, but it has the advantage of neither adding
      * additional state nor requiring lookups.
      */
-    @NonNull
-    private String computeOverrideMethodName(@NonNull String name, @NonNull String desc) {
+
+    private String computeOverrideMethodName( String name,  String desc) {
         if (desc.startsWith(instanceToStaticDescPrefix)
                 && !name.equals("init$args")
                 && !name.equals("init$body")) {

@@ -23,12 +23,12 @@ import org.objectweb.asm.Type;
  */
 class LocalVariable {
 
-    @NonNull
+
     public final Type type;
 
     public final int var;
 
-    LocalVariable(@NonNull Type type, int var) {
+    LocalVariable( Type type, int var) {
         this.type = type;
         this.var = var;
     }

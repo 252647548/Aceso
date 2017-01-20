@@ -1,21 +1,4 @@
-/*
- * Copyright (C) 2015 The Android Open Source Project
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package com.mogujie.instantrun;
-
 
 import com.google.common.collect.ImmutableList;
 import com.mogujie.groovy.util.Log;
@@ -28,7 +11,9 @@ import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.FieldNode;
 import org.objectweb.asm.tree.MethodNode;
 
-import java.io.*;
+import java.io.BufferedInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -38,11 +23,7 @@ import java.util.zip.ZipOutputStream;
 
 public class IncrementalVisitor extends ClassVisitor {
 
-    private static final ILogger LOG = LoggerWrapper.getLogger(IncrementalVisitor.class);
 
-    /**
-     * Defines the output type from this visitor.
-     */
     public enum OutputType {
         /**
          * provide instrumented classes that can be hot swapped at runtime with an override class.
@@ -76,9 +57,9 @@ public class IncrementalVisitor extends ClassVisitor {
 
     protected String visitedClassName;
     protected String visitedSuperName;
-    @NonNull
+
     protected final ClassNode classNode;
-    @NonNull
+
     protected final List<ClassNode> parentNodes;
 
     /**
@@ -87,7 +68,7 @@ public class IncrementalVisitor extends ClassVisitor {
     protected enum AccessRight {
         PRIVATE, PACKAGE_PRIVATE, PROTECTED, PUBLIC;
 
-        @NonNull
+
         static AccessRight fromNodeAccess(int nodeAccess) {
             if ((nodeAccess & Opcodes.ACC_PRIVATE) != 0) return PRIVATE;
             if ((nodeAccess & Opcodes.ACC_PROTECTED) != 0) return PROTECTED;
@@ -97,13 +78,13 @@ public class IncrementalVisitor extends ClassVisitor {
     }
 
     public IncrementalVisitor(
-            @NonNull ClassNode classNode,
-            @NonNull List<ClassNode> parentNodes,
-            @NonNull ClassVisitor classVisitor) {
+             ClassNode classNode,
+             List<ClassNode> parentNodes,
+             ClassVisitor classVisitor) {
         super(Opcodes.ASM5, classVisitor);
         this.classNode = classNode;
         this.parentNodes = parentNodes;
-        LOG.info("%s: Visiting %s", getClass().getSimpleName(), classNode.name);
+        Log.i(getClass().getSimpleName() + ": Visiting " + classNode.name);
     }
 
     @Override
@@ -111,13 +92,13 @@ public class IncrementalVisitor extends ClassVisitor {
         return super.visitMethod(access, name, desc, signature, exceptions);
     }
 
-    @NonNull
-    protected static String getRuntimeTypeName(@NonNull Type type) {
+
+    protected static String getRuntimeTypeName( Type type) {
         return "L" + type.getInternalName() + ";";
     }
 
-    @Nullable
-    FieldNode getFieldByName(@NonNull String fieldName) {
+
+    FieldNode getFieldByName( String fieldName) {
         FieldNode fieldNode = getFieldByNameInClass(fieldName, classNode);
         Iterator<ClassNode> iterator = parentNodes.iterator();
         while (fieldNode == null && iterator.hasNext()) {
@@ -127,9 +108,9 @@ public class IncrementalVisitor extends ClassVisitor {
         return fieldNode;
     }
 
-    @Nullable
+
     protected static FieldNode getFieldByNameInClass(
-            @NonNull String fieldName, @NonNull ClassNode classNode) {
+             String fieldName,  ClassNode classNode) {
         //noinspection unchecked ASM api.
         List<FieldNode> fields = classNode.fields;
         for (FieldNode field : fields) {
@@ -140,7 +121,7 @@ public class IncrementalVisitor extends ClassVisitor {
         return null;
     }
 
-    @Nullable
+
     protected MethodNode getMethodByName(String methodName, String desc) {
         MethodNode methodNode = getMethodByNameInClass(methodName, desc, classNode);
         Iterator<ClassNode> iterator = parentNodes.iterator();
@@ -151,7 +132,7 @@ public class IncrementalVisitor extends ClassVisitor {
         return methodNode;
     }
 
-    @Nullable
+
     protected static MethodNode getMethodByNameInClass(String methodName, String desc, ClassNode classNode) {
         //noinspection unchecked ASM API
         List<MethodNode> methods = classNode.methods;
@@ -163,15 +144,14 @@ public class IncrementalVisitor extends ClassVisitor {
         return null;
     }
 
-    protected static void trace(@NonNull GeneratorAdapter mv, @Nullable String s) {
+    protected static void trace( GeneratorAdapter mv,  String s) {
         mv.push(s);
         mv.invokeStatic(Type.getObjectType(PACKAGE + "/AndroidInstantRuntime"),
                 Method.getMethod("void trace(String)"));
     }
 
 
-
-    protected static void trace(@NonNull GeneratorAdapter mv, int argsNumber) {
+    protected static void trace( GeneratorAdapter mv, int argsNumber) {
         StringBuilder methodSignature = new StringBuilder("void trace(String");
         for (int i = 0; i < argsNumber - 1; i++) {
             methodSignature.append(", String");
@@ -185,18 +165,16 @@ public class IncrementalVisitor extends ClassVisitor {
      * Simple Builder interface for common methods between all byte code visitors.
      */
     public interface VisitorBuilder {
-        @NonNull
-        IncrementalVisitor build(@NonNull ClassNode classNode,
-                                 @NonNull List<ClassNode> parentNodes, @NonNull ClassVisitor classVisitor);
 
-        @NonNull
-        String getMangledRelativeClassFilePath(@NonNull String originalClassFilePath);
+        IncrementalVisitor build( ClassNode classNode,
+                                  List<ClassNode> parentNodes,  ClassVisitor classVisitor);
 
-        @NonNull
+
+        String getMangledRelativeClassFilePath( String originalClassFilePath);
+
+
         OutputType getOutputType();
     }
-
-
 
 
     /**
@@ -213,12 +191,12 @@ public class IncrementalVisitor extends ClassVisitor {
         return (access & (Opcodes.ACC_ABSTRACT | Opcodes.ACC_BRIDGE | Opcodes.ACC_NATIVE)) == 0;
     }
 
-    @Nullable
+
     public static boolean instrumentClass(
             ZipEntry entry,
             ZipFile zipFile,
             ZipOutputStream zos,
-            @NonNull VisitorBuilder visitorBuilder, boolean isHotfix) throws IOException {
+             VisitorBuilder visitorBuilder, boolean isHotfix) throws IOException {
         byte[] classBytes = Utils.toByteArray(zipFile.getInputStream(entry));
         ClassReader classReader = new ClassReader(classBytes);
         // override the getCommonSuperClass to use the thread context class loader instead of
@@ -306,8 +284,8 @@ public class IncrementalVisitor extends ClassVisitor {
 
             IncrementalChangeVisitor changeVisitor = (IncrementalChangeVisitor) visitor;
             if (changeVisitor.superMethods.size() > 0) {
-                if(parentsNodes.size()<=0){
-                    throw new GradleException("not found "+changeVisitor.visitedClassName+" 's parents.");
+                if (parentsNodes.size() <= 0) {
+                    throw new GradleException("not found " + changeVisitor.visitedClassName + " 's parents.");
                 }
                 SuperHelperVisitor superHelperVisitor = new SuperHelperVisitor(Opcodes.ASM5, changeVisitor, parentsNodes.get(0));
                 superHelperVisitor.start();
@@ -325,9 +303,9 @@ public class IncrementalVisitor extends ClassVisitor {
     }
 
 
-    @NonNull
+
     private static List<ClassNode> parseParents(
-            @NonNull ZipFile zipFile, @NonNull final ClassNode classNode) throws IOException {
+             ZipFile zipFile,  final ClassNode classNode) throws IOException {
 //        File binaryFolder = getBinaryFolder(inputFile, classNode);
         List<ClassNode> parentNodes = new ArrayList<ClassNode>();
         String currentParentName = classNode.superName;
@@ -363,10 +341,6 @@ public class IncrementalVisitor extends ClassVisitor {
                     }
                 } catch (IOException e) {
                     // Could not locate parent class. This is as far as we can go locating parents.
-                    LOG.info(
-                            "IncrementalVisitor parseParents could not locate %1$s "
-                                    + "which is an ancestor of project class %2$s.\n",
-                            currentParentName, classNode.name);
                     return ImmutableList.of();
                 }
             }

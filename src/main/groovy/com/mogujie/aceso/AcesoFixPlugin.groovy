@@ -66,15 +66,10 @@ class AcesoFixPlugin extends AcesoBasePlugin {
                 ProguardTool.instance().initProguardMap(jarMergingTask.transform.getMappingFile())
             }
             File combindJar = getCombindJar(jarMergingTask, varName)
-            Log.i "combindJar is " + combindJar
             File combindBackupJar = Util.initFile(getFileInAceso("backup", varDirName, combindJar.name))
-
             File fixJar = Util.initFile(getFileInAceso("fix", varDirName, combindJar.name))
-
             HookWrapper.expandScope(combindJar, fixJar)
-
             Util.copy(project, combindJar, combindBackupJar.parentFile)
-
             Util.copy(project, fixJar, combindJar.parentFile)
         }
     }
@@ -110,29 +105,21 @@ class AcesoFixPlugin extends AcesoBasePlugin {
     }
 
     private void doPatchWhenJarExists(def jarMergingTask, String varName, String varDirName) {
-        AndroidJavaCompile classTask = project.tasks.findByName("compile${varName}JavaWithJavac")
         jarMergingTask.outputs.upToDateWhen { return false }
         jarMergingTask.doLast {
-//            jarMergingTask=jarMergingTask as dE
             HashMap<String, String> proguardMap = null
             if (jarMergingTask.name.startsWith("transformClassesAndResourcesWithProguardFor")) {
                 ProguardTool.instance().initProguardMap(jarMergingTask.transform.getMappingFile())
                 proguardMap = ProguardTool.instance().getProguardMap()
             }
-
             File combindJar = getCombindJar(jarMergingTask, varName)
-            Log.i "combindJar is " + combindJar
-
             File combindBackupJar = Util.initFile(getFileInAceso("backup", varDirName, combindJar.name))
             File fixJar = Util.initFile(getFileInAceso("fix", varDirName, combindJar.name))
             ArrayList<File> classPath = new ArrayList()
-//            classPath.addAll(classTask.classpath.files)
             classPath.add(new File(config.modifiedJar))
             classPath.add(new File(Util.getAndroidSdkPath(project)))
             HookWrapper.fix(combindJar, fixJar, classPath, proguardMap, config.acesoMapping)
-
             Util.copy(project, combindJar, combindBackupJar.parentFile)
-
             Util.copy(project, fixJar, combindJar.parentFile)
         }
     }

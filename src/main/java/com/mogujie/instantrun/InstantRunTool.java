@@ -12,7 +12,7 @@ import org.objectweb.asm.Opcodes;
 public class InstantRunTool {
 
     public static byte[] getPatchFileContents(
-            @NonNull ImmutableList<String> patchFileContents, @NonNull ImmutableList<Integer> patchIndexContents) {
+             ImmutableList<String> patchFileContents,  ImmutableList<Integer> patchIndexContents) {
         if (patchFileContents.size() != patchIndexContents.size()) {
             throw new GradleException("patchFileContents's size is "
                     + patchFileContents.size() + ", but patchIndexContents's size is "
