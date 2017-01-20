@@ -20,11 +20,12 @@ class AcesoHostPlugin extends AcesoBasePlugin {
         String varName = variant.name.capitalize()
         String varDirName = variant.getDirName()
 
-        def jarMergingTask = findJarMergingTask(project, varName)
-
         if (config.disableInstrumentDebug && varName.toLowerCase().contains("debug")) {
             return;
         }
+
+        def jarMergingTask = findJarMergingTask(project, varName)
+
         //todo jarMergingTask == null
         if (jarMergingTask == null) {
             try {

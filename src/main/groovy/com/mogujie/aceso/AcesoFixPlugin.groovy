@@ -47,15 +47,16 @@ class AcesoFixPlugin extends AcesoBasePlugin {
                 doPatchWhenJarExists(jarMergingTask, varName, varDirName)
             }
         } else {
+            //todo add an switch to support old fix
             Log.i "is old hotfix "
             if (jarMergingTask == null) {
+                //todo support expand when jarMergingTask is null
                 Log.w "jarMergingTask is null, we will not do anything."
             } else {
                 Log.w "jarMergingTask is exist,we will expand class scope."
                 expandWhenJarExists(jarMergingTask, varName, varDirName)
             }
         }
-
     }
 
 
