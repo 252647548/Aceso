@@ -1,16 +1,11 @@
 package com.mogujie.aceso
+
 import com.google.common.collect.ImmutableList
 import com.google.common.collect.Iterables
 import com.mogujie.groovy.traversal.ZipTraversal
 import com.mogujie.groovy.util.Log
 import com.mogujie.groovy.util.Utils
-import com.mogujie.instantrun.IncrementalChangeVisitor
-import com.mogujie.instantrun.IncrementalSupportVisitor
-import com.mogujie.instantrun.IncrementalVisitor
-import com.mogujie.instantrun.InstantProguardMap
-import com.mogujie.instantrun.InstantRunTool
-import com.mogujie.instantrun.TransformAccessClassNode
-import instant.*
+import com.mogujie.instantrun.*
 import org.gradle.api.GradleException
 import org.objectweb.asm.ClassReader
 import org.objectweb.asm.ClassWriter
@@ -18,6 +13,7 @@ import org.objectweb.asm.ClassWriter
 import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
 import java.util.zip.ZipOutputStream
+
 /**
  * Created by wangzhi on 16/12/5.
  */
@@ -29,7 +25,6 @@ class HookWrapper {
 
     static InstrumentFilter filter
 
-
     public
     static void expandScope(File combindJar, File instrumentJar) {
 
@@ -37,16 +32,16 @@ class HookWrapper {
         ZipTraversal.traversal(combindJar, new ZipTraversal.Callback() {
             @Override
             void oneEntry(ZipEntry entry, byte[] bytes) {
-                Log.i("entry: "+entry)
-                if(!filter.accept(entry.getName())){
+                Log.i("entry: " + entry)
+                if (!filter.accept(entry.getName())) {
                     return;
                 }
-                Log.i("accept entry: "+entry)
+                Log.i("accept entry: " + entry)
                 zos.putNextEntry(new ZipEntry(entry.name))
                 ClassReader cr = new ClassReader(bytes);
-                TransformAccessClassNode cn=new TransformAccessClassNode()
-                cr.accept(cn,0)
-                ClassWriter cw=new ClassWriter( 0)
+                TransformAccessClassNode cn = new TransformAccessClassNode()
+                cr.accept(cn, 0)
+                ClassWriter cw = new ClassWriter(0)
                 cn.accept(cw)
                 zos.write(cw.toByteArray())
                 zos.closeEntry()
@@ -63,26 +58,27 @@ class HookWrapper {
             InstantProguardMap.instance().readMapping(new File(acesoMapping))
         }
 
-        inject(combindJar, supportJar, classPath, null, IncrementalSupportVisitor.VISITOR_BUILDER, false)
+        inject(combindJar, supportJar, classPath, null, false)
         InstantProguardMap.instance().printMapping(mappingFile)
     }
 
     public
     static void fix(File combindJar, File instrumentJar, ArrayList<File> classPathList, HashMap<String, String> proguardMap, String acesoMapping) {
         InstantProguardMap.instance().readMapping(new File(acesoMapping))
-        inject(combindJar, instrumentJar, classPathList, proguardMap, IncrementalChangeVisitor.VISITOR_BUILDER, true)
+        inject(combindJar, instrumentJar, classPathList, proguardMap, true)
     }
 
     public
-    static void inject(File combindJar, File outJar, ArrayList<File> classPath, HashMap<String, String> proguardMap, IncrementalVisitor.VisitorBuilder builder, boolean isHotfix) {
+    static void inject(File combindJar, File outJar, ArrayList<File> classPath, HashMap<String, String> proguardMap, boolean isHotfix) {
         ZipFile zipFile = new ZipFile(combindJar)
         List<URL> classPathList = new ArrayList<>()
         classPathList.add(combindJar.toURI().toURL())
         classPath.each { cp ->
             classPathList.add(cp.toURI().toURL())
         }
-        URL[] classPathAarray = Iterables.toArray(classPathList, URL.class)
-        ClassLoader classesToInstrumentLoader = new URLClassLoader(classPathAarray) {
+
+        ClassLoader classesToInstrumentLoader = new URLClassLoader(
+                Iterables.toArray(classPathList, URL.class)) {
             @Override
             public URL getResource(String name) {
                 // Never delegate to bootstrap classes.
@@ -94,39 +90,20 @@ class HookWrapper {
         ClassLoader originalThreadContextClassLoader = Thread.currentThread()
                 .getContextClassLoader();
         try {
-            int mtdCount = 0;
             Thread.currentThread().setContextClassLoader(classesToInstrumentLoader);
             ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(outJar))
             ArrayList<String> fixClassList = new ArrayList()
-
             zipFile.entries().each { entry ->
-                String entryName = entry.name
-                if(entryName.endsWith(".class")){
-                    if (!isHotfix) {
-                        if (support(entryName)) {
-                            instrumentClassInternal(builder, zos, zipFile, entry, entryName, isHotfix)
-                        } else {
-                            putEntry(zos, zipFile, entry)
-                        }
-
+                if (entry.name.endsWith(".class")) {
+                    if (isHotfix) {
+                        fixOneEntry(zos, zipFile, entry, fixClassList, classPath, proguardMap)
                     } else {
-                        if (!isNewClass(entryName, classPath, proguardMap)) {
-                            String addEntryName = instrumentClassInternal(builder, zos, zipFile, entry, entryName, isHotfix)
-                            if (!Utils.isStringEmpty(addEntryName)) {
-                                fixClassList.add(entryName)
-                            }
-                        } else {
-                            fixClassList.add(entryName)
-                            putEntry(zos, zipFile, entry)
-                        }
-
+                        instrumentOneEntry(zos, zipFile, entry)
                     }
                 }
-
             }
             if (isHotfix) {
                 zos.putNextEntry(new ZipEntry("com/android/tools/fd/runtime/AppPatchesLoaderImpl.class"))
-                Log.v("fix ClassList: " + fixClassList)
                 byte[] bytes = getPatchesLoaderClass(fixClassList)
                 zos.write(bytes)
                 zos.closeEntry()
@@ -139,6 +116,28 @@ class HookWrapper {
 
         } finally {
             Thread.currentThread().setContextClassLoader(originalThreadContextClassLoader);
+        }
+    }
+
+    private static void instrumentOneEntry(ZipOutputStream zos, ZipFile zipFile, ZipEntry entry) {
+        if (support(entry.name)) {
+            processClassInternal(IncrementalSupportVisitor.VISITOR_BUILDER, zos, zipFile, entry, false)
+        } else {
+            putEntry(zos, zipFile, entry)
+        }
+    }
+
+    private static void fixOneEntry(ZipOutputStream zos, ZipFile zipFile, ZipEntry entry,
+                                    ArrayList<String> fixClassList, ArrayList<File> classPath,
+                                    HashMap<String, String> proguardMap) {
+        if (!isNewClass(entry.name, classPath, proguardMap)) {
+            String addEntryName = processClassInternal(IncrementalChangeVisitor.VISITOR_BUILDER, zos, zipFile, entry, true)
+            if (!Utils.isStringEmpty(addEntryName)) {
+                fixClassList.add(entry.name)
+            }
+        } else {
+            fixClassList.add(entry.name)
+            putEntry(zos, zipFile, entry)
         }
     }
 
@@ -177,10 +176,10 @@ class HookWrapper {
     }
 
     private
-    static String instrumentClassInternal(IncrementalVisitor.VisitorBuilder builder, ZipOutputStream zos,
-                                          ZipFile zipFile, ZipEntry entry, String entryName,
-                                          boolean isHotfix) {
-
+    static String processClassInternal(IncrementalVisitor.VisitorBuilder builder, ZipOutputStream zos,
+                                       ZipFile zipFile, ZipEntry entry,
+                                       boolean isHotfix) {
+        String entryName = entry.name
         boolean isPatch = IncrementalVisitor.instrumentClass(entry, zipFile, zos, builder, isHotfix)
         Log.v("class ${entryName}'s mtd count : " + InstantProguardMap.instance().getNowMtdIndex())
         entryName = pathToClassNameInPackage(entryName)
@@ -224,7 +223,6 @@ class HookWrapper {
             }
         }
         ImmutableList<String> classNameList = ImmutableList.copyOf(classNames)
-
         ImmutableList<Integer> classIndexList = ImmutableList.copyOf(classIndexs)
         return InstantRunTool.getPatchFileContents(classNameList, classIndexList)
     }
