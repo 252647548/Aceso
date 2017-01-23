@@ -94,7 +94,6 @@ class HookWrapper {
         ClassLoader originalThreadContextClassLoader = Thread.currentThread()
                 .getContextClassLoader();
         try {
-            int count = 0;
             int mtdCount = 0;
             Thread.currentThread().setContextClassLoader(classesToInstrumentLoader);
             ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(outJar))
@@ -102,26 +101,28 @@ class HookWrapper {
 
             zipFile.entries().each { entry ->
                 String entryName = entry.name
-                if (!isHotfix) {
-                    if (support(entryName)) {
-                        count++;
-                        instrumentClassInternal(builder, zos, zipFile, entry, entryName, isHotfix)
-                    } else {
-                        putEntry(zos, zipFile, entry)
-                    }
-
-                } else {
-                    if (!isNewClass(entryName, classPath, proguardMap)) {
-                        String addEntryName = instrumentClassInternal(builder, zos, zipFile, entry, entryName, isHotfix)
-                        if (!Utils.isStringEmpty(addEntryName)) {
-                            fixClassList.add(entryName)
+                if(entryName.endsWith(".class")){
+                    if (!isHotfix) {
+                        if (support(entryName)) {
+                            instrumentClassInternal(builder, zos, zipFile, entry, entryName, isHotfix)
+                        } else {
+                            putEntry(zos, zipFile, entry)
                         }
-                    } else {
-                        fixClassList.add(entryName)
-                        putEntry(zos, zipFile, entry)
-                    }
 
+                    } else {
+                        if (!isNewClass(entryName, classPath, proguardMap)) {
+                            String addEntryName = instrumentClassInternal(builder, zos, zipFile, entry, entryName, isHotfix)
+                            if (!Utils.isStringEmpty(addEntryName)) {
+                                fixClassList.add(entryName)
+                            }
+                        } else {
+                            fixClassList.add(entryName)
+                            putEntry(zos, zipFile, entry)
+                        }
+
+                    }
                 }
+
             }
             if (isHotfix) {
                 zos.putNextEntry(new ZipEntry("com/android/tools/fd/runtime/AppPatchesLoaderImpl.class"))
