@@ -60,10 +60,6 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
         visitedSuperName = superName;
 
         InstantProguardMap.instance().putClass(visitedClassName);
-//        addSerialUidIfMissing();
-//        super.visitField(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC
-//                        | Opcodes.ACC_VOLATILE | Opcodes.ACC_SYNTHETIC | Opcodes.ACC_TRANSIENT,
-//                "$change", getRuntimeTypeName(MTD_MAP_TYPE), null, null);
         access = InstantRunTool.transformClassAccessForInstantRun(access);
         super.visit(version, access, name, signature, superName, interfaces);
     }
@@ -185,8 +181,7 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
 
                 super.visitLabel(start);
                 change = newLocal(MTD_MAP_TYPE);
-//                visitFieldInsn(Opcodes.GETSTATIC, visitedClassName, "$change",
-//                        getRuntimeTypeName(MTD_MAP_TYPE));
+
                 push(new Integer(InstantProguardMap.instance().getClassIndex(visitedClassName)));
                 push(new Integer(InstantProguardMap.instance().getMtdIndex(visitedClassName, InstantRunTool.getMtdSig(name, desc))));
                 invokeStatic(IncrementalVisitor.MTD_MAP_TYPE, Method.getMethod("com.android.tools.fd.runtime.IncrementalChange get(int,int)"));

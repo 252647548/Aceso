@@ -25,19 +25,7 @@ import org.objectweb.asm.tree.*;
 
 import java.util.*;
 
-/**
- * Visitor for classes that have been changed since the initial push.
- * <p/>
- * This will generate a new class which name is the original class name + "$override". This class
- * will have a static method for each method found in the updated class.
- * <p/>
- * The static method will be invoked from the generated access$dispatch method
- * following a delegation request issued by the original method implementation (through the bytecode
- * injection done in {@link IncrementalSupportVisitor}.
- * <p/>
- * So far the static method implementation do not require any change since the "this" parameter
- * is passed as the first parameter and is available in register 0.
- */
+
 public class IncrementalChangeVisitor extends IncrementalVisitor {
 
     public static final VisitorBuilder VISITOR_BUILDER = new IncrementalVisitor.VisitorBuilder() {
@@ -77,17 +65,17 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
     // List of constructors we encountered and deconstructed.
     List<MethodNode> addedMethods = new ArrayList();
 
-    ArrayList<String> fixMtds = new ArrayList<>();
+    ArrayList<String> fixMtds = new ArrayList<String>();
 
     //被调用到的super.xxx()方法
-    ArrayList<InstantMethod> superMethods = new ArrayList<>();
+    ArrayList<InstantMethod> superMethods = new ArrayList<InstantMethod>();
 
     private enum MachineState {
         NORMAL, AFTER_NEW
     }
 
-    HashSet<String> priNativeMtdSet = new HashSet<>();
-    HashSet<String> priSyncMtdSet = new HashSet<>();
+    HashSet<String> priNativeMtdSet = new HashSet<String>();
+    HashSet<String> priSyncMtdSet = new HashSet<String>();
     List<MethodNode> methodNodes = null;
 
     public IncrementalChangeVisitor(

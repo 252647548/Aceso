@@ -14,8 +14,6 @@ public class TransformAccessClassNode extends ClassNode {
         super(Opcodes.ASM5);
     }
 
-
-
     @Override
     public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
         access = InstantRunTool.transformAccessForInstantRun(access);

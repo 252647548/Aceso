@@ -1,6 +1,5 @@
 package com.mogujie.instantrun;
 
-import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.Method;
 
 /**
@@ -14,10 +13,6 @@ public class InstantMethod extends Method {
         super(name, desc);
         this.oriDesc = oriDesc;
         this.owner = owner;
-    }
-
-    public InstantMethod(String name, Type returnType, Type[] argumentTypes) {
-        super(name, returnType, argumentTypes);
     }
 
     public String getOriDesc() {

@@ -75,18 +75,4 @@ public class SuperHelperVisitor extends ClassWriter implements Opcodes {
         visitEnd();
     }
 
-
-    public void push(MethodVisitor mv, final int value) {
-        if (value >= -1 && value <= 5) {
-            mv.visitInsn(Opcodes.ICONST_0 + value);
-        } else if (value >= Byte.MIN_VALUE && value <= Byte.MAX_VALUE) {
-            mv.visitIntInsn(Opcodes.BIPUSH, value);
-        } else if (value >= Short.MIN_VALUE && value <= Short.MAX_VALUE) {
-            mv.visitIntInsn(Opcodes.SIPUSH, value);
-        } else {
-            mv.visitLdcInsn(value);
-        }
-    }
-
-
 }

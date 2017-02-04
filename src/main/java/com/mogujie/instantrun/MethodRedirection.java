@@ -25,25 +25,13 @@ import java.util.List;
 
 public class MethodRedirection extends Redirection {
 
-    /**
-     * The name of the method we redirect to.
-     */
-
-    private final String name;
-
     MethodRedirection( LabelNode label, String visitedClassName, String mtdName, String mtdDesc,  List<Type> types,  Type type, boolean isStatic) {
         super(label, visitedClassName, mtdName, mtdDesc, types, type, isStatic);
-        this.name = mtdName + "." + mtdDesc;
     }
 
 
     @Override
     protected void doRedirect( GeneratorAdapter mv, int change) {
-        // Push the three arguments
-//        mv.loadLocal(change);
-//        mv.push(InstantProguardMap.instance().getMtdIndex());
-//        mv.invokeVirtual(IncrementalVisitor.MTD_MAP_TYPE, Method.getMethod("Object get(int)"));
-
         mv.loadLocal(change);
         mv.push(InstantProguardMap.instance().getMtdIndex(visitedClassName,InstantRunTool.getMtdSig(mtdName,mtdDesc)));
         ByteCodeUtils.newVariableArray(mv, ByteCodeUtils.toLocalVariables(types));

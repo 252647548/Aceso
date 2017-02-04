@@ -1,8 +1,5 @@
 package com.mogujie.instantrun;
 
-import com.google.common.base.Joiner;
-import com.google.common.base.Preconditions;
-import com.google.common.base.Splitter;
 import com.google.common.collect.Lists;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
@@ -111,43 +108,4 @@ public class ByteCodeUtils {
         return variables;
     }
 
-    
-    static Type getTypeForStoreOpcode(int opcode) {
-        switch (opcode) {
-            case Opcodes.ISTORE:
-                return Type.INT_TYPE;
-            case Opcodes.LSTORE:
-                return Type.LONG_TYPE;
-            case Opcodes.FSTORE:
-                return Type.FLOAT_TYPE;
-            case Opcodes.DSTORE:
-                return Type.DOUBLE_TYPE;
-            case Opcodes.ASTORE:
-                return Type.getType(Object.class);
-        }
-        return null;
-    }
-
-    
-
-    public static String toInternalName( String className) {
-        return className.replace('.', '/');
-    }
-
-    
-
-    public static String getClassName( String memberName) {
-        Preconditions.checkArgument(memberName.contains(":"), "Class name passed as argument.");
-        return memberName.substring(0, memberName.indexOf('.'));
-    }
-
-    
-
-    public static String getPackageName( String internalName) {
-        List<String> parts = Splitter.on('/').splitToList(internalName);
-        if (parts.size() == 1) {
-            return null;
-        }
-        return Joiner.on('.').join(parts.subList(0, parts.size() - 1));
-    }
 }

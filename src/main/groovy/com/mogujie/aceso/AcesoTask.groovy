@@ -8,7 +8,6 @@ import org.gradle.api.tasks.TaskAction
  * Created by wangzhi on 16/12/8.
  */
 class AcesoTask extends DefaultTask {
-
     String varName
 
     @TaskAction
@@ -20,7 +19,6 @@ class AcesoTask extends DefaultTask {
         String varName
 
         HotFixAction(String varName) {
-
             this.varName = varName
         }
 

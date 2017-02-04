@@ -35,27 +35,6 @@ import java.util.Map;
 import java.util.Set;
 
 
-/**
- * Class for generating an efficient string switch in ByteCode.
- * <p/>
- * Current implementation looks like:
- * <p/>
- * switch(s.hashCode()) {
- * case 192: visitCase(s);
- * case 312: visitCase(s);
- * case 1024:
- * if (s.equals("collided_method1")) {
- * visit(s);
- * } else if (s.equals("collided_method2")) {
- * visit(s);
- * }
- * visitDefault();
- * default:
- * visitDefault();
- * }
- * <p/>
- * In the most common case of no hash collisions, only the hashCode level if switching is needed.
- */
 abstract class IntSwitch {
 
     InstantProguardMap.ClassData classData = null;
@@ -67,51 +46,19 @@ abstract class IntSwitch {
         }
     };
 
-    // Set this to a small positive number to force has hashcode collisions to exercise the
-    // length and character checks.
-    private static final Integer FORCE_HASH_COLLISION_MODULUS = null;
-
-    // Figure out some types and methods ahead of time.
     private static final Type OBJECT_TYPE = Type.getType(Object.class);
     private static final Type STRING_TYPE = Type.getType(String.class);
     private static final Type INSTANT_RELOAD_EXCEPTION_TYPE =
             Type.getObjectType(IncrementalVisitor.PACKAGE + "/InstantReloadException");
 
-    // Methods overridden by caller to implement the switch behavior
-
-    // Caller-implemented behavior should push one string onto the stack. This is the string to be
-    // matched.
     abstract void visitString();
 
     abstract void visitInt();
 
-    // Caller-implemented behavior for when a string is matched. This method should return a value
-    // appropriate for the method that it exists in or throw an exception.
     abstract void visitCase(String string);
 
-    // Caller-implemented behavior to handle the default case of the switch. The default is an
-    // error case so this method should throw an exception.
     abstract void visitDefault();
 
-    // Override this method to provide a different hash generation method. You'll also need
-    // to change HASH_METHOD in this class to correspond
-    void visitHashMethod(GeneratorAdapter mv) {
-        mv.invokeVirtual(STRING_TYPE, Method.getMethod("int hashCode()"));
-    }
-
-    /**
-     * Emit code for a string if-else block.
-     * <p/>
-     * if (s.equals("collided_method1")) {
-     * visit(s);
-     * } else if (s.equals("collided_method2")) {
-     * visit(s);
-     * }
-     * <p/>
-     * In the most common case of just one string, this degenerates to:
-     * <p/>
-     * visit(s)
-     */
     private void visitx(GeneratorAdapter mv, List<String> strings) {
         if (strings.size() == 1) {
             visitCase(strings.get(0));
@@ -130,23 +77,6 @@ abstract class IntSwitch {
         visitDefault();
     }
 
-    /**
-     * Emit code for a string switch for the given string classifier.
-     * <p/>
-     * switch(s.hashCode()) {
-     * case 192: visitCase(s);
-     * case 312: visitCase(s);
-     * case 1024:
-     * if (s.equals("collided_method1")) {
-     * visit(s);
-     * } else if (s.equals("collided_method2")) {
-     * visit(s);
-     * }
-     * visitDefault();
-     * default:
-     * visitDefault();
-     * }
-     **/
     private void visitClassifier(GeneratorAdapter mv, Set<String> strings) {
         visitInt();
 
@@ -188,15 +118,6 @@ abstract class IntSwitch {
         visitDefault();
     }
 
-    /**
-     * Generates a standard error exception with message similar to:
-     * <p/>
-     * String switch could not find 'equals.(Ljava/lang/Object;)Z' with hashcode 0
-     * in com/example/basic/GrandChild
-     *
-     * @param mv               The generator adaptor used to emit the lookup switch code.
-     * @param visitedClassName The abstract string trie structure.
-     */
     void writeMissingMessageWithHash(GeneratorAdapter mv, String visitedClassName) {
         mv.newInstance(INSTANT_RELOAD_EXCEPTION_TYPE);
         mv.dup();
@@ -226,12 +147,6 @@ abstract class IntSwitch {
         mv.throwException();
     }
 
-    /**
-     * Main entry point for creation of string switch
-     *
-     * @param mv      The generator adaptor used to emit the lookup switch code.
-     * @param strings The closed set of strings to generate a switch for.
-     */
     void visit(GeneratorAdapter mv, Set<String> strings, String className) {
         this.classData = InstantProguardMap.instance().getClassData(className);
         if (classData == null) {
