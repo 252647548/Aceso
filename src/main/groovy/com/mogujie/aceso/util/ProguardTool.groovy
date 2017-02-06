@@ -1,4 +1,4 @@
-package com.mogujie.aceso
+package com.mogujie.aceso.util
 /**
  * Created by wangzhi on 16/12/30.
  */

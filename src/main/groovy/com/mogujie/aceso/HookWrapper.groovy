@@ -2,11 +2,13 @@ package com.mogujie.aceso
 
 import com.google.common.collect.ImmutableList
 import com.google.common.collect.Iterables
+import com.mogujie.aceso.util.Util
 import com.mogujie.groovy.traversal.ZipTraversal
 import com.mogujie.groovy.util.Log
 import com.mogujie.groovy.util.Utils
 import com.mogujie.instantrun.*
 import org.gradle.api.GradleException
+import org.gradle.api.Project
 import org.objectweb.asm.ClassReader
 import org.objectweb.asm.ClassWriter
 
@@ -27,7 +29,6 @@ class HookWrapper {
 
     public
     static void expandScope(File combindJar, File instrumentJar) {
-
         ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(instrumentJar))
         ZipTraversal.traversal(combindJar, new ZipTraversal.Callback() {
             @Override
@@ -51,29 +52,40 @@ class HookWrapper {
     }
 
     public
-    static void instrument(File combindJar, File supportJar, ArrayList<File> classPath, File mappingFile, String acesoMapping) {
+    static void instrument(Project project, File combindJar, File supportJar, ArrayList<File> classPath, File mappingFile, String acesoMapping) {
         InstantProguardMap.instance().reset()
         if (Utils.checkFile(acesoMapping)) {
             Log.i("apply instant mapping: " + acesoMapping)
             InstantProguardMap.instance().readMapping(new File(acesoMapping))
         }
 
-        inject(combindJar, supportJar, classPath, null, false)
+        inject(project, combindJar, supportJar, classPath, null, false)
         InstantProguardMap.instance().printMapping(mappingFile)
     }
 
     public
-    static void fix(File combindJar, File instrumentJar, ArrayList<File> classPathList, HashMap<String, String> proguardMap, String acesoMapping) {
+    static void fix(Project project, File combindJar, File instrumentJar, ArrayList<File> classPathList, HashMap<String, String> proguardMap, String acesoMapping) {
         InstantProguardMap.instance().readMapping(new File(acesoMapping))
-        inject(combindJar, instrumentJar, classPathList, proguardMap, true)
+        inject(project, combindJar, instrumentJar, classPathList, proguardMap, true)
     }
 
     public
-    static void inject(File combindJar, File outJar, ArrayList<File> classPath, HashMap<String, String> proguardMap, boolean isHotfix) {
+    static void inject(Project project, File combindJar, File outJar, ArrayList<File> classPath, HashMap<String, String> proguardMap, boolean isHotfix) {
         ZipFile zipFile = new ZipFile(combindJar)
+        ArrayList<File> newClassPath = new ArrayList<>()
+        if (classPath != null) {
+            newClassPath.addAll(classPath)
+        }
+        File androidJar = new File(Util.getAndroidSdkPath(project))
+        if (!androidJar.exists()) {
+            throw new RuntimeException("not found android jar.")
+        }
+        newClassPath.add(androidJar)
+
         List<URL> classPathList = new ArrayList<>()
         classPathList.add(combindJar.toURI().toURL())
-        classPath.each { cp ->
+
+        newClassPath.each { cp ->
             classPathList.add(cp.toURI().toURL())
         }
 
@@ -96,7 +108,7 @@ class HookWrapper {
             zipFile.entries().each { entry ->
                 if (entry.name.endsWith(".class")) {
                     if (isHotfix) {
-                        fixOneEntry(zos, zipFile, entry, fixClassList, classPath, proguardMap)
+                        fixOneEntry(zos, zipFile, entry, fixClassList, newClassPath, proguardMap)
                     } else {
                         instrumentOneEntry(zos, zipFile, entry)
                     }

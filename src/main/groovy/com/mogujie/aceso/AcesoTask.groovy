@@ -8,11 +8,10 @@ import org.gradle.api.tasks.TaskAction
  * Created by wangzhi on 16/12/8.
  */
 class AcesoTask extends DefaultTask {
-    String varName
 
     @TaskAction
     void taskExec() {
-        Log.i("package instant fix apk successful!")
+        Log.i("execute aceso fix successful!")
     }
 
     public static class HotFixAction implements org.gradle.api.Action<AcesoTask> {
@@ -26,7 +25,7 @@ class AcesoTask extends DefaultTask {
         void execute(AcesoTask hotfixTask) {
             def assembleTask = hotfixTask.project.tasks.findByName("assemble" + varName)
             hotfixTask.dependsOn assembleTask
-            hotfixTask.varName = varName
         }
+
     }
 }

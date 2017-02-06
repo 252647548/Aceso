@@ -84,7 +84,7 @@ public class IncrementalVisitor extends ClassVisitor {
         super(Opcodes.ASM5, classVisitor);
         this.classNode = classNode;
         this.parentNodes = parentNodes;
-        Log.i(getClass().getSimpleName() + ": Visiting " + classNode.name);
+        Log.v(getClass().getSimpleName() + ": Visiting " + classNode.name);
     }
 
     @Override
@@ -275,13 +275,11 @@ public class IncrementalVisitor extends ClassVisitor {
         IncrementalVisitor visitor = visitorBuilder.build(classNode, parentsNodes, classWriter);
         classNode.accept(visitor);
 
-
         zos.putNextEntry(nowEntry);
         zos.write(classWriter.toByteArray());
         zos.closeEntry();
 
         if (isHotfix) {
-
             IncrementalChangeVisitor changeVisitor = (IncrementalChangeVisitor) visitor;
             if (changeVisitor.superMethods.size() > 0) {
                 if (parentsNodes.size() <= 0) {
@@ -306,15 +304,12 @@ public class IncrementalVisitor extends ClassVisitor {
 
     private static List<ClassNode> parseParents(
              ZipFile zipFile,  final ClassNode classNode) throws IOException {
-//        File binaryFolder = getBinaryFolder(inputFile, classNode);
         List<ClassNode> parentNodes = new ArrayList<ClassNode>();
         String currentParentName = classNode.superName;
 
         while (currentParentName != null) {
             ZipEntry zipEntry = zipFile.getEntry(currentParentName + ".class");
-//            File parentFile = new File(binaryFolder, currentParentName + ".class");
             if (zipEntry != null) {
-//                LOG.info("Parsing %s.", zipEntry.getName());
                 InputStream parentFileClassReader = new BufferedInputStream(zipFile.getInputStream(zipEntry));
                 ClassReader parentClassReader = new ClassReader(parentFileClassReader);
                 ClassNode parentNode = new TransformAccessClassNode();
@@ -337,7 +332,6 @@ public class IncrementalVisitor extends ClassVisitor {
                         for (FieldNode field : parentNode.fields) {
                             Log.i("w:  " + field.name + "  " + field.access);
                         }
-
                     }
                 } catch (IOException e) {
                     // Could not locate parent class. This is as far as we can go locating parents.

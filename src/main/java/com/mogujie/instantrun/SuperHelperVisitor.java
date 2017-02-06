@@ -50,7 +50,6 @@ public class SuperHelperVisitor extends ClassWriter implements Opcodes {
         }
 
         for (InstantMethod method : visitor.superMethods) {
-            Log.i("Super: " + method.getName() + "<>" + method.getDescriptor());
             MethodVisitor mv = visitMethod(ACC_PUBLIC + ACC_STATIC, method.getName(), method.getDescriptor(), null, null);
             mv.visitCode();
             Type[] args = Type.getArgumentTypes(method.getDescriptor());

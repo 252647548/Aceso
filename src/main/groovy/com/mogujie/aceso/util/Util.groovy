@@ -1,4 +1,4 @@
-package com.mogujie.aceso
+package com.mogujie.aceso.util
 
 import com.mogujie.groovy.util.Log
 import com.mogujie.groovy.util.Utils

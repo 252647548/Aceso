@@ -162,7 +162,7 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
             // we skip the class init as it can reset static fields which we don't support right now
             return null;
         }
-        Log.i("visit method "+name+"  "+desc);
+        Log.v("visit method "+name+"  "+desc);
         boolean isStatic = (access & Opcodes.ACC_STATIC) != 0;
         boolean isPrivate = (access & Opcodes.ACC_PRIVATE) != 0;
         boolean isSync = (access & Opcodes.ACC_SYNCHRONIZED) != 0;
@@ -232,22 +232,13 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
             if (status == INIT) {
                 MethodInsnNode methodInsnNode = (MethodInsnNode) node;
                 if ("<init>".equals(methodInsnNode.name)) {
-                    Log.i("find new invoke : " + methodInsnNode.owner + " " + methodInsnNode.name + " "
-                            + methodInsnNode.desc);
                     if (getMethodAccessRight(methodInsnNode.owner, methodInsnNode.name
                             , methodInsnNode.desc) == AccessRight.PUBLIC) {
                         int removeSize = removeList.size();
                         removeList.remove(removeSize - 1);
                         removeList.remove(removeSize - 2);
-                    } else {
-                        Log.i("we will remove ins : " + removeList.size());
-                        for (AbstractInsnNode removeNode : removeList) {
-                            Log.i("\t " + removeNode.getOpcode() + "  " + removeNode.getType());
-
-                        }
                     }
                 }
-
 
             }
         }

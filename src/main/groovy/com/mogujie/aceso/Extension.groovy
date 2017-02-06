@@ -5,6 +5,7 @@ package com.mogujie.aceso;
  */
 public class Extension {
     //base plugin
+    public int logLevel = 2
     public boolean disable = false
     public String acesoMapping
     //host plugin
