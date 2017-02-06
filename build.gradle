@@ -17,25 +17,3 @@ allprojects {
         mavenCentral()
     }
 }
-
-
-apply plugin: 'groovy'
-apply plugin: 'maven'
-apply plugin: 'upaar'
-
-
-dependencies {
-    compile fileTree(include: ['*.jar'], dir: 'libs')
-    compile gradleApi()
-    compile localGroovy()
-    compile 'com.android.tools.build:gradle:2.0.0'
-    compile 'com.mogujie.base:groovy:1.0.0.9'
-}
-
-
-upinfo {
-    groupId = 'com.mogujie.gradle'
-    artifactId = 'aceso'
-    version = '0.0.2.7'
-}
-
