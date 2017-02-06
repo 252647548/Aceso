@@ -25,12 +25,12 @@ public class SuperHelperVisitor extends ClassWriter implements Opcodes {
 
     public void start() {
         visit(Opcodes.V1_7, ACC_PUBLIC + ACC_SUPER, visitor.visitedClassName + "$helper", null, visitor.visitedSuperName, null);
-        for (int nodeIndex=0;nodeIndex<  superNode.methods.size();nodeIndex++) {
-            MethodNode methodNode= (MethodNode) superNode.methods.get(nodeIndex);
+        for (int nodeIndex = 0; nodeIndex < superNode.methods.size(); nodeIndex++) {
+            MethodNode methodNode = (MethodNode) superNode.methods.get(nodeIndex);
             if ("<init>".equals(methodNode.name)) {
                 String[] exceptions = null;
                 if (methodNode.exceptions != null) {
-                    exceptions =  methodNode.exceptions.toArray(new String[0]);
+                    exceptions= (String[]) methodNode.exceptions.toArray(new String[0]);
                 }
                 MethodVisitor mv = visitMethod(ACC_PUBLIC, methodNode.name, methodNode.desc, methodNode.signature, exceptions);
                 mv.visitCode();
@@ -40,7 +40,7 @@ public class SuperHelperVisitor extends ClassWriter implements Opcodes {
                 int local = 1;
                 for (int i = 0; i < variables.size(); i++) {
                     mv.visitVarInsn(variables.get(i).type.getOpcode(Opcodes.ILOAD), variables.get(i).var + 1);
-                    local = variables.get(i).var + 1+variables.get(i).type.getSize();
+                    local = variables.get(i).var + 1 + variables.get(i).type.getSize();
                 }
                 mv.visitMethodInsn(INVOKESPECIAL, superNode.name, methodNode.name, methodNode.desc, false);
                 mv.visitInsn(RETURN);

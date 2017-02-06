@@ -12,11 +12,11 @@ android {
         versionCode 1
         versionName "1.0"
 
-
     }
+
     buildTypes {
         release {
-            minifyEnabled false
+            minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
@@ -31,14 +31,45 @@ Aceso {
     acesoMapping = getAcesoMapping()
 }
 
-String getModifiedJar() {
-    return project.findProject(":aceso-demo").buildDir.absolutePath + '/intermediates/aceso/instrument/debug/combined.jar'
+def getModifiedJar() {
+    def jarName=null;
+    if (buildTypeStr().contains("debug")) {
+        jarName="combined.jar"
+    }else{
+        jarName="main.jar"
+    }
+    return project.rootProject.file("../aceso-demo/app/build/intermediates/aceso/instrument/full/${buildTypeStr()}/${jarName}").absolutePath
 }
 
-String getAcesoMapping() {
-    return project.findProject(":aceso-demo").buildDir.absolutePath + '/intermediates/aceso/mapping/debug/mapping.txt'
+def getAcesoMapping() {
+    return project.rootProject.file("../aceso-demo/app/build/intermediates/aceso/mapping/full/${buildTypeStr()}/mapping.txt").absolutePath
+}
+
+def buildTypeStr() {
+    def buildType = ""
+    project.gradle.getStartParameter().getTaskRequests().each { taskReq ->
+        taskReq.args.each { arg ->
+            if (arg.startsWith("aceso")) {
+                buildType = (arg - "aceso").toLowerCase()
+            }
+        }
+    }
+    return buildType
 }
 
 dependencies {
     provided fileTree(include: ['*.jar'], dir: 'libs')
+}
+
+project.afterEvaluate {
+    File allClassesJar = null
+    if (buildTypeStr().contains("debug")) {
+        allClassesJar = project.rootProject.file("../aceso-demo/app/build/intermediates/aceso/merged/full/${buildTypeStr()}/combined.jar")
+    } else {
+        allClassesJar = project.rootProject.file("../aceso-demo/app/build/intermediates/aceso/merged/full/debug/combined.jar")
+    }
+    copy {
+        from allClassesJar
+        into new File(project.projectDir, "libs")
+    }
 }

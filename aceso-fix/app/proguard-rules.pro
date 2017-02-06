@@ -15,3 +15,14 @@
 #-keepclassmembers class fqcn.of.javascript.interface.for.webview {
 #   public *;
 #}
+-dontskipnonpubliclibraryclassmembers
+-useuniqueclassmembernames
+-dontshrink
+-dontoptimize
+-optimizationpasses 1
+-dontusemixedcaseclassnames
+-dontskipnonpubliclibraryclasses
+-dontpreverify
+-verbose
+
+-keep class com.mogujie.aceso.demo.MainActivity {*;}

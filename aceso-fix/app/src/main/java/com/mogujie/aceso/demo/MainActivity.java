@@ -31,6 +31,6 @@ public class MainActivity extends Activity {
 
     @FixMtd
     public void test(View view) {
-        Toast.makeText(this, "has been fixed !!!", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, "has been fixed ! ", Toast.LENGTH_SHORT).show();
     }
 }

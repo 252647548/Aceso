@@ -2,9 +2,16 @@ apply plugin: 'com.android.application'
 apply plugin: 'Aceso'
 
 android {
+    signingConfigs {
+        release {
+            keyAlias 'aceso'
+            keyPassword 'moguaceso'
+            storeFile file('/Users/farmerjohn/IdeaProjects/aceso/aceso-demo/app/aceso.keystore')
+            storePassword 'moguaceso'
+        }
+    }
     compileSdkVersion 22
     buildToolsVersion "22.0.1"
-
     defaultConfig {
         applicationId "com.mogujie.aceso.demo"
         minSdkVersion 14
@@ -14,17 +21,25 @@ android {
     }
     buildTypes {
         release {
-            minifyEnabled false
+            minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.release
+        }
+    }
+    productFlavors {
+        full {
+//            applicationIdSuffix ".full"
+//            versionNameSuffix "-full"
         }
     }
 }
 
 dependencies {
-    compile fileTree(dir: 'libs', include: ['*.jar'])
+    compile fileTree(include: ['*.jar'], dir: 'libs')
     compile 'com.mogujie:aceso-android-lib:0.0.1-LOCAL'
 }
 
-Aceso{
-    disableInstrumentDebug=false
+Aceso {
+    disableInstrumentDebug = false
 }
+
