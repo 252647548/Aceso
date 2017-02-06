@@ -31,15 +31,15 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
     public static final VisitorBuilder VISITOR_BUILDER = new IncrementalVisitor.VisitorBuilder() {
 
         @Override
-        public IncrementalVisitor build( ClassNode classNode,
-                                         List<ClassNode> parentNodes,
-                                         ClassVisitor classVisitor) {
+        public IncrementalVisitor build(ClassNode classNode,
+                                        List<ClassNode> parentNodes,
+                                        ClassVisitor classVisitor) {
             return new IncrementalChangeVisitor(classNode, parentNodes, classVisitor);
         }
 
 
         @Override
-        public String getMangledRelativeClassFilePath( String path) {
+        public String getMangledRelativeClassFilePath(String path) {
             // Remove .class (length 6) and replace with $override.class
             return path.substring(0, path.length() - 6) + OVERRIDE_SUFFIX + ".class";
         }
@@ -79,12 +79,13 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
     List<MethodNode> methodNodes = null;
 
     public IncrementalChangeVisitor(
-             ClassNode classNode,
-             List<ClassNode> parentNodes,
-             ClassVisitor classVisitor) {
+            ClassNode classNode,
+            List<ClassNode> parentNodes,
+            ClassVisitor classVisitor) {
         super(classNode, parentNodes, classVisitor);
         methodNodes = classNode.methods;
-        for (MethodNode methodNode : classNode.methods) {
+        for (int i = 0; i < classNode.methods.size(); i++) {
+            MethodNode methodNode = (MethodNode) classNode.methods.get(i);
             if ((methodNode.access & (Opcodes.ACC_NATIVE | Opcodes.ACC_PRIVATE)) == (Opcodes.ACC_NATIVE | Opcodes.ACC_PRIVATE)) {
                 priNativeMtdSet.add(methodNode.name + "." + methodNode.desc);
                 System.out.println("find private native mtd : " + methodNode.name + "." + methodNode.desc);
@@ -162,7 +163,7 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
             // we skip the class init as it can reset static fields which we don't support right now
             return null;
         }
-        Log.v("visit method "+name+"  "+desc);
+        Log.v("visit method " + name + "  " + desc);
         boolean isStatic = (access & Opcodes.ACC_STATIC) != 0;
         boolean isPrivate = (access & Opcodes.ACC_PRIVATE) != 0;
         boolean isSync = (access & Opcodes.ACC_SYNCHRONIZED) != 0;
@@ -1005,7 +1006,7 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
      * @param type The type name of the other object, either a "com/var/Object" or a "[Type" one.
      * @return true if className and visited class are in the same java package.
      */
-    private boolean isInSamePackage( String type) {
+    private boolean isInSamePackage(String type) {
 
         if (type.charAt(0) == '[') {
             return false;
@@ -1016,7 +1017,7 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
     /**
      * @return the package of the given / separated class name.
      */
-    private String getPackage( String className) {
+    private String getPackage(String className) {
         int i = className.lastIndexOf('/');
         return i == -1 ? className : className.substring(0, i);
     }
@@ -1027,7 +1028,7 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
      * @param className a / separated class name
      * @return true if it is an ancestor, false otherwise.
      */
-    private boolean isAnAncestor( String className) {
+    private boolean isAnAncestor(String className) {
         for (ClassNode parentNode : parentNodes) {
             if (parentNode.name.equals(className)) {
                 return true;
@@ -1041,7 +1042,7 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
      * the first parameter. If the method is static, it is unchanged.
      */
 
-    private String computeOverrideMethodDesc( String desc, boolean isStatic) {
+    private String computeOverrideMethodDesc(String desc, boolean isStatic) {
         if (isStatic) {
             return desc;
         } else {
@@ -1058,7 +1059,7 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
      * additional state nor requiring lookups.
      */
 
-    private String computeOverrideMethodName( String name,  String desc) {
+    private String computeOverrideMethodName(String name, String desc) {
         if (desc.startsWith(instanceToStaticDescPrefix)
                 && !name.equals("init$args")
                 && !name.equals("init$body")) {

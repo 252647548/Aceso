@@ -157,6 +157,10 @@ class HookWrapper {
     static boolean isNewClass(String entryName, ArrayList<File> classPath, HashMap<String, String> proguardMap) {
         boolean isNewClass = true
 
+        if (entryName.endsWith("BuildConfig.class") || entryName ==~ AcesoBasePlugin.MATCHER_R) {
+            return true
+        }
+
         classPath.each { path ->
             if (path.isFile() && (path.name.endsWith(".jar") || path.name.endsWith(".zip"))) {
                 ZipFile classJar = new ZipFile(path)

@@ -189,7 +189,9 @@ public class HookDexTransform extends Transform {
             @Override
             public void graphPopulated(TaskExecutionGraph taskGraph) {
                 for (Task task : taskGraph.getAllTasks()) {
-                    if (task instanceof TransformTask && task.name.toLowerCase().contains(variant.name.toLowerCase())) {
+                    if (task.getProject().equals(project)
+                            && task instanceof TransformTask
+                            && task.name.toLowerCase().contains(variant.name.toLowerCase())) {
                         if (isDexTransform(((TransformTask) task).getTransform())
                                 && !(((TransformTask) task).getTransform() instanceof HookDexTransform)) {
                             Log.w("find dex transform. class: " + task.transform.getClass() + ". task name: " + task.name)
@@ -200,6 +202,7 @@ public class HookDexTransform extends Transform {
                             field.setAccessible(true)
                             field.set(task, hookDexTransform)
                             Log.w("transform class after hook: " + task.transform.getClass())
+                            Log.w("ClassProcessor class after hook: " + processor.getClass())
                             break;
                         }
                     }

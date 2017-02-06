@@ -327,12 +327,7 @@ public class IncrementalVisitor extends ClassVisitor {
                     parentClassReader.accept(parentNode, ClassReader.EXPAND_FRAMES);
                     parentNodes.add(parentNode);
                     currentParentName = parentNode.superName;
-                    if (classNode.name.contains("FlexByteArrayPool")) {
-                        Log.i("find class--> " + parentNode.name + "   " + parentNode.fields.size());
-                        for (FieldNode field : parentNode.fields) {
-                            Log.i("w:  " + field.name + "  " + field.access);
-                        }
-                    }
+
                 } catch (IOException e) {
                     // Could not locate parent class. This is as far as we can go locating parents.
                     return ImmutableList.of();

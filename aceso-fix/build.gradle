@@ -1,0 +1,21 @@
+buildscript {
+    repositories {
+        mavenLocal()
+        jcenter()
+        maven { url 'http://maven.mogujie.org/nexus/content/groups/mitpublic/' }
+    }
+    dependencies {
+        classpath 'com.mogujie.gradle:upaar:1.5.6'
+        classpath 'com.android.tools.build:gradle:2.0.0'
+        classpath 'com.mogujie.gradle:aceso:0.0.2.7-LOCAL'
+    }
+}
+
+allprojects {
+    repositories {
+        mavenLocal()
+        maven { url 'http://maven.mogujie.org/nexus/content/groups/mitpublic/' }
+        jcenter()
+        mavenCentral()
+    }
+}

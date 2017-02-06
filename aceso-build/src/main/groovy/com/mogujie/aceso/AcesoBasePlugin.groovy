@@ -12,7 +12,7 @@ import org.gradle.api.Project
 abstract class AcesoBasePlugin implements Plugin<Project> {
 
     public static final String ACESO_DIR_NAME = "aceso"
-    static def MATCHER_R = '''.*/R\\$.*\\.class|.*/R\\.class'''
+    public static def MATCHER_R = '''.*/R\\$.*\\.class|.*/R\\.class'''
 
     Project project
     Extension config
@@ -30,7 +30,7 @@ abstract class AcesoBasePlugin implements Plugin<Project> {
                     config.acesoMapping = new File(project.projectDir, "aceso-mapping.txt").absolutePath
                 }
                 if (!Utils.checkFile(config.acesoMapping)) {
-                    Log.e("aceso mapping not found!")
+                    Log.w("aceso mapping not found!")
                 }
                 HookWrapper.filter = initFilter()
                 realApply()
