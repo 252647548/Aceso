@@ -29,19 +29,32 @@ public abstract class ClassProcessor {
         this.varName = varName
         this.varDirName = varDirName
         this.config = config
-        if (Util.isProguard(project, varName)) {
+        if (Util.proguardOpen(project, varName)) {
             jarName = "main.jar"
         } else {
             jarName = "combined.jar"
         }
     }
 
+    /**
+     * Return the jar file which includes all classes.
+     */
     abstract File getMergedJar()
 
+    /**
+     * Return the jar file which includes
+     * all classes that have been processed.
+     */
     abstract File getOutJar()
 
+    /**
+     * processing the class file.
+     */
     abstract void process()
 
+    /**
+     * init env
+     */
     void prepare() {
         Util.initFile(getMergedJar())
         Util.initFile(getOutJar())

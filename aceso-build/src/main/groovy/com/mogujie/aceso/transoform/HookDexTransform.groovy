@@ -40,7 +40,6 @@ public class HookDexTransform extends Transform {
 
     ClassProcessor processor
 
-
     HookDexTransform(Project project, def variant, DexTransform dexTransform, ClassProcessor processor) {
         this.dexTransform = dexTransform
         this.project = project
@@ -130,6 +129,7 @@ public class HookDexTransform extends Transform {
 
         jarMerger.close()
 
+        //process the mergedJar
         processor.process()
 
         //invoke the original transform method
@@ -143,6 +143,9 @@ public class HookDexTransform extends Transform {
 
     }
 
+    /**
+     * change the jar file to TransformInputs
+     */
     Collection<TransformInput> jarFileToInputs(File jarFile) {
         TransformInput transformInput = new TransformInput() {
             @Override
@@ -186,8 +189,9 @@ public class HookDexTransform extends Transform {
         return ImmutableList.of(transformInput)
     }
 
-
-    //comment
+    /**
+     * Replace the dex task 's transform with HookDexTransform
+     */
     public static void injectDexTransform(Project project, def variant, ClassProcessor processor) {
         Log.i("prepare inject dex transform ")
         project.getGradle().getTaskGraph().addTaskExecutionGraphListener(new TaskExecutionGraphListener() {
@@ -206,8 +210,6 @@ public class HookDexTransform extends Transform {
                             Field field = TransformTask.class.getDeclaredField("transform")
                             field.setAccessible(true)
                             field.set(task, hookDexTransform)
-                            Log.w("transform class after hook: " + task.transform.getClass())
-                            Log.w("ClassProcessor class after hook: " + processor.getClass())
                             break;
                         }
                     }
@@ -218,6 +220,8 @@ public class HookDexTransform extends Transform {
     }
 
     public static isDexTransform(Transform transform) {
+        //some plugin may replace the dex transform,
+        //so if transform's name is dex,we think is dex transform.
         return ((transform instanceof DexTransform) || transform.getName().equals("dex"))
     }
 

@@ -1,6 +1,5 @@
 package com.mogujie.aceso.util
 
-import com.mogujie.groovy.util.Log
 import com.mogujie.groovy.util.Utils
 import org.gradle.api.Project
 import org.gradle.api.Task
@@ -11,7 +10,7 @@ import org.gradle.api.Task
  * @author wangzhi
  */
 
-class Util {
+public class Util {
 
     public static initFile(File file) {
         Utils.initParentFile(file)
@@ -39,10 +38,11 @@ class Util {
         return apk
     }
 
-
+    /**
+     * Whether it is executed acesoXXX task.
+     */
     public static boolean isAcesoFix(Project project) {
         boolean isNewHotfix = project.gradle.getStartParameter().taskNames.any { taskName ->
-            Log.i "task " + taskName
             if (taskName.toLowerCase().startsWith("aceso")) {
                 return true
             }
@@ -51,7 +51,7 @@ class Util {
     }
 
 
-    public static boolean isProguard(Project project, String varName) {
+    public static boolean proguardOpen(Project project, String varName) {
         return (project.tasks.findByName("transformClassesAndResourcesWithProguardFor${varName}") != null)
     }
 

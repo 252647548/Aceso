@@ -54,27 +54,39 @@ public class HookWrapper {
         zos.close()
     }
 
-    public
-    static void instrument(Project project, File combindJar, File supportJar, ArrayList<File> classPath, File mappingFile, String acesoMapping) {
+    /**
+     * Instrument all class file in the inJar file,
+     */
+    public static void instrument(Project project, File inJar, File outJar,
+                                  ArrayList<File> classPath, File mappingFile,
+                                  String acesoMapping) {
         InstantProguardMap.instance().reset()
         if (Utils.checkFile(acesoMapping)) {
             Log.i("apply instant mapping: " + acesoMapping)
             InstantProguardMap.instance().readMapping(new File(acesoMapping))
         }
-
-        inject(project, combindJar, supportJar, classPath, null, false)
+        inject(project, inJar, outJar, classPath, null, false)
         InstantProguardMap.instance().printMapping(mappingFile)
     }
 
-    public
-    static void fix(Project project, File combindJar, File instrumentJar, ArrayList<File> classPathList, HashMap<String, String> proguardMap, String acesoMapping) {
+    /**
+     * Generate patch class base on inJar file,
+     */
+    public static void fix(Project project, File inJar, File outJar,
+                           ArrayList<File> classPathList, HashMap<String, String> proguardMap,
+                           String acesoMapping) {
         InstantProguardMap.instance().readMapping(new File(acesoMapping))
-        inject(project, combindJar, instrumentJar, classPathList, proguardMap, true)
+        inject(project, inJar, outJar, classPathList, proguardMap, true)
     }
 
-    public
-    static void inject(Project project, File combindJar, File outJar, ArrayList<File> classPath, HashMap<String, String> proguardMap, boolean isHotfix) {
-        ZipFile zipFile = new ZipFile(combindJar)
+    /**
+     * if isHotfix is true,then generate the patch file,
+     * else instrument the class file.
+     */
+    public static void inject(Project project, File inJar, File outJar,
+                              ArrayList<File> classPath, HashMap<String, String> proguardMap,
+                              boolean isHotfix) {
+        ZipFile zipFile = new ZipFile(inJar)
         ArrayList<File> newClassPath = new ArrayList<>()
         if (classPath != null) {
             newClassPath.addAll(classPath)
@@ -86,7 +98,7 @@ public class HookWrapper {
         newClassPath.add(androidJar)
 
         List<URL> classPathList = new ArrayList<>()
-        classPathList.add(combindJar.toURI().toURL())
+        classPathList.add(inJar.toURI().toURL())
 
         newClassPath.each { cp ->
             classPathList.add(cp.toURI().toURL())
@@ -167,12 +179,6 @@ public class HookWrapper {
         classPath.each { path ->
             if (path.isFile() && (path.name.endsWith(".jar") || path.name.endsWith(".zip"))) {
                 ZipFile classJar = new ZipFile(path)
-
-                //获得混淆之前的类名
-//                String realName = entryName
-//                if (proguardMap != null) {
-//                    realName = proguardMap.get(entryName)
-//                }
                 if (classJar.getEntry(entryName) != null) {
                     isNewClass = false
                 }
@@ -209,6 +215,10 @@ public class HookWrapper {
         }
     }
 
+    /**
+     * Transform the class path to fully qualified name.
+     * e.g. com/mogujie/aceso/a.class -> com.mogujie.aceso.a
+     */
     private static String pathToClassNameInPackage(String path) {
         String className = path.substring(0, path.lastIndexOf(".class"))
         className = className.replace(File.separator, ".")
@@ -225,7 +235,10 @@ public class HookWrapper {
         }
     }
 
-
+    /**
+     * Generate the class that includes
+     * all classes that need to be repaired.
+     */
     public
     static byte[] getPatchesLoaderClass(ArrayList<String> classPathList) {
         ArrayList<String> classNames = new ArrayList<>()
