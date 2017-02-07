@@ -21,7 +21,15 @@ public class Extension {
     public boolean disable = false
 
     /**
-     * The aceso mapping
+     *  BlackList for class
+     */
+    public String blackListPath
+
+
+    /**
+     * The aceso mapping.
+     * For host plugn,it is use for keeping this aceso-proguard's compilation result.
+     * For fix plugin,it is use for generate patch apk.
      */
     public String acesoMapping
 

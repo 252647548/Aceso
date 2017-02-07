@@ -19,6 +19,7 @@ public abstract class AcesoBasePlugin implements Plugin<Project> {
 
     Project project
     Extension config
+    List<String> blackList
 
     @Override
     void apply(Project project) {
@@ -28,10 +29,14 @@ public abstract class AcesoBasePlugin implements Plugin<Project> {
         project.afterEvaluate {
             initExtensions()
             Log.logLevel = config.logLevel
-            if (config.disable == false) {
-                if (config.acesoMapping == null) {
+            if (!config.disable) {
+
+                if (Utils.isStringEmpty(config.acesoMapping)) {
                     config.acesoMapping = new File(project.projectDir, "aceso-mapping.txt").absolutePath
                 }
+
+                initBlacklist()
+
                 if (!Utils.checkFile(config.acesoMapping)) {
                     Log.w("aceso mapping not found!")
                 }
@@ -49,7 +54,23 @@ public abstract class AcesoBasePlugin implements Plugin<Project> {
         config = project.extensions.findByName("Aceso") as Extension
     }
 
-    //可配置
+    protected void initBlacklist() {
+        File blackListFile;
+        blackList = new ArrayList<>()
+        if (Utils.isStringEmpty(config.blackListPath)) {
+            blackListFile = new File(project.projectDir, 'aceso-blackList.txt')
+        } else {
+            blackListFile = new File(config.blackListPath)
+        }
+        Log.i("blackList file is " + blackListFile.absolutePath)
+
+        if (blackListFile.exists()) {
+            blackListFile.eachLine { line ->
+                blackList.add(line.trim())
+            }
+        }
+    }
+
     public static HookWrapper.InstrumentFilter initFilter() {
 
         return new HookWrapper.InstrumentFilter() {
@@ -67,18 +88,14 @@ public abstract class AcesoBasePlugin implements Plugin<Project> {
                     name = ProguardTool.instance().getProguardMap().get(name)
                 }
 
-                if (name.startsWith("com/android/tools/fd/runtime")
-                        || name.startsWith("com/xiaomi/")
-                        || name.startsWith("org/apache/")
-                        || name.startsWith("com/android/")
-                        || name.startsWith("com/google/")
-                        || name.startsWith("android/")
-                        || name.startsWith("okhttp3/")) {
-                    return false
+                for (String str : blackList) {
+                    if (name.startsWith(str)) {
+                        return false
+                    }
                 }
                 return true
-
             }
         }
     }
+
 }
