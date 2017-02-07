@@ -9,9 +9,12 @@ import com.mogujie.groovy.util.Utils
 import com.mogujie.instantrun.InstantRunTool
 
 /**
- * Created by wangzhi on 16/12/7.
+ * A plugin for generate patch apk.
+ *
+ * @author wangzhi
  */
-class AcesoFixPlugin extends AcesoBasePlugin {
+
+public class AcesoFixPlugin extends AcesoBasePlugin {
 
     @Override
     protected void realApply() {

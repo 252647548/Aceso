@@ -9,8 +9,11 @@ import com.mogujie.groovy.util.Log
 import org.gradle.api.Project
 
 /**
- * Created by wangzhi on 17/2/4.
+ * The class processor for generate the hotfix file.
+ *
+ * @author wangzhi
  */
+
 class FixClassProcessor extends ClassProcessor {
 
     FixClassProcessor(Project project, String varName, String varDirName, Extension config) {

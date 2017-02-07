@@ -7,9 +7,12 @@ import org.gradle.api.Plugin
 import org.gradle.api.Project
 
 /**
- * Created by wangzhi on 17/1/16.
+ * The base plugin
+ *
+ * @author wangzhi
  */
-abstract class AcesoBasePlugin implements Plugin<Project> {
+
+public abstract class AcesoBasePlugin implements Plugin<Project> {
 
     public static final String ACESO_DIR_NAME = "aceso"
     public static def MATCHER_R = '''.*/R\\$.*\\.class|.*/R\\.class'''
@@ -46,6 +49,7 @@ abstract class AcesoBasePlugin implements Plugin<Project> {
         config = project.extensions.findByName("Aceso") as Extension
     }
 
+    //可配置
     public static HookWrapper.InstrumentFilter initFilter() {
 
         return new HookWrapper.InstrumentFilter() {

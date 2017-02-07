@@ -2,10 +2,14 @@ package com.mogujie.aceso
 import com.mogujie.groovy.util.Log
 import org.gradle.api.DefaultTask
 import org.gradle.api.tasks.TaskAction
+
 /**
- * Created by wangzhi on 16/12/8.
+ * A empty task whose name is acesoXXX and dependsOn assemble task.
+ *
+ * @author wangzhi
  */
-class AcesoTask extends DefaultTask {
+
+public class AcesoTask extends DefaultTask {
 
     @TaskAction
     void taskExec() {

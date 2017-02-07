@@ -20,8 +20,12 @@ import org.gradle.api.execution.TaskExecutionGraphListener
 import java.lang.reflect.Field
 
 /**
- * Created by wangzhi on 16/11/24.
+ * This class hook the real dex transform,
+ * and process the class file.
+ *
+ * @author wangzhi
  */
+
 public class HookDexTransform extends Transform {
 
     Project project
@@ -183,6 +187,7 @@ public class HookDexTransform extends Transform {
     }
 
 
+    //comment
     public static void injectDexTransform(Project project, def variant, ClassProcessor processor) {
         Log.i("prepare inject dex transform ")
         project.getGradle().getTaskGraph().addTaskExecutionGraphListener(new TaskExecutionGraphListener() {

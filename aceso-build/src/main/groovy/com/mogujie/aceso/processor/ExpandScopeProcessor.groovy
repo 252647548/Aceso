@@ -10,7 +10,7 @@ import org.gradle.api.Project
 /**
  * Created by wangzhi on 17/2/6.
  */
-class ExpandScopeProcessor extends ClassProcessor {
+public class ExpandScopeProcessor extends ClassProcessor {
     ExpandScopeProcessor(Project project, String varName, String varDirName, Extension config) {
         super(project, varName, varDirName, config)
     }

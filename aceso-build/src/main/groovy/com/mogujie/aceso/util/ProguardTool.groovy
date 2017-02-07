@@ -1,7 +1,11 @@
 package com.mogujie.aceso.util
+
 /**
- * Created by wangzhi on 16/12/30.
+ * This class hold the proguard map.
+ *
+ * @author wangzhi
  */
+
 public class ProguardTool {
 
 

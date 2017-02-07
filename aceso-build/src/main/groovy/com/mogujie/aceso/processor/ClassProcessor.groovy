@@ -7,9 +7,12 @@ import com.mogujie.groovy.util.Utils
 import org.gradle.api.Project
 
 /**
- * Created by wangzhi on 17/2/4.
+ * The class processor.
+ *
+ * @author wangzhi
  */
-abstract class ClassProcessor {
+
+public abstract class ClassProcessor {
 
     Project project
 

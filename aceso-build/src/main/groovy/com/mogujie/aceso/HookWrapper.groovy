@@ -17,9 +17,12 @@ import java.util.zip.ZipFile
 import java.util.zip.ZipOutputStream
 
 /**
- * Created by wangzhi on 16/12/5.
+ * A wrapper for class real processing
+ *
+ * @author wangzhi
  */
-class HookWrapper {
+
+public class HookWrapper {
 
     public interface InstrumentFilter {
         boolean accept(String name)
@@ -132,10 +135,10 @@ class HookWrapper {
     }
 
     private static void instrumentOneEntry(ZipOutputStream zos, ZipFile zipFile, ZipEntry entry) {
-        if (support(entry.name)) {
-            processClassInternal(IncrementalSupportVisitor.VISITOR_BUILDER, zos, zipFile, entry, false)
-        } else {
+        if (inBlackList(entry.name)) {
             putEntry(zos, zipFile, entry)
+        } else {
+            processClassInternal(IncrementalSupportVisitor.VISITOR_BUILDER, zos, zipFile, entry, false)
         }
     }
 
@@ -213,12 +216,12 @@ class HookWrapper {
     }
 
 
-    public static boolean support(String name) {
+    public static boolean inBlackList(String name) {
         if (filter == null) {
             Log.i("filter is null.")
-            return true
+            return false
         } else {
-            return filter.accept(name)
+            return !filter.accept(name)
         }
     }
 
