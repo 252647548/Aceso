@@ -10,15 +10,6 @@ class AcesoTask extends DefaultTask {
     @TaskAction
     void taskExec() {
         Log.i("execute aceso fix successful!")
-        project.gradle.getStartParameter().getTaskRequests().each {
-            println(it.args)
-            it.args.each {
-                arg->
-                    arg.toLowerCase().contains("debug")
-            }
-        }
-        File file ;
-        project.file()
     }
 
     public static class HotFixAction implements org.gradle.api.Action<AcesoTask> {
