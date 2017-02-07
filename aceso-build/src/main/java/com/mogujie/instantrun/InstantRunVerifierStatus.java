@@ -20,8 +20,6 @@ package com.mogujie.instantrun;
  * Changes to a class that cannot be hot swapped with the current InstantRun runtime
  */
 public enum InstantRunVerifierStatus {
-
     COMPATIBLE,
     INCOMPATIBLE
-
 }

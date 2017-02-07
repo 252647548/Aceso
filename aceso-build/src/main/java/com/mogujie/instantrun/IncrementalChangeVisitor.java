@@ -187,7 +187,7 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
             }
 
             return new ISVisitor(original, access, newName, newDesc,
-                    InstantRunTool.getMtdSig(name, desc), isStatic, false /* isConstructor */);
+                    IncrementalTool.getMtdSig(name, desc), isStatic, false /* isConstructor */);
         }
     }
 
@@ -311,7 +311,7 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
             this.isStatic = isStatic;
             this.isConstructor = isConstructor;
             this.originalMtdSig = originalMtdSig;
-            if (!InstantRunTool.isMethodLevelFix()) {
+            if (!IncrementalTool.isMethodLevelFix()) {
                 fixMtds.add(originalMtdSig);
             }
         }
@@ -319,7 +319,7 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
         @Override
         public AnnotationVisitor visitAnnotation(String desc, boolean visible) {
 
-            if (InstantRunTool.isMethodLevelFix()
+            if (IncrementalTool.isMethodLevelFix()
                     && desc.equals(FIXMTD_ANNOTATION_TYPE.getDescriptor())) {
                 fixMtds.add(originalMtdSig);
             }
@@ -978,7 +978,7 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
         Label l0 = new Label();
         Label l1 = new Label();
         for (int i = 0; i < fixMtds.size(); i++) {
-            hashArray[i] = InstantProguardMap.instance().getClassData(visitedClassName).getMtdIndex(fixMtds.get(i));
+            hashArray[i] = AcesoProguardMap.instance().getClassData(visitedClassName).getMtdIndex(fixMtds.get(i));
             labelArray[i] = l0;
         }
 

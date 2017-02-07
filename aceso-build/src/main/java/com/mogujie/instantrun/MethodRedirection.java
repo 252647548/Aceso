@@ -33,7 +33,7 @@ public class MethodRedirection extends Redirection {
     @Override
     protected void doRedirect( GeneratorAdapter mv, int change) {
         mv.loadLocal(change);
-        mv.push(InstantProguardMap.instance().getMtdIndex(visitedClassName,InstantRunTool.getMtdSig(mtdName,mtdDesc)));
+        mv.push(AcesoProguardMap.instance().getMtdIndex(visitedClassName, IncrementalTool.getMtdSig(mtdName,mtdDesc)));
         ByteCodeUtils.newVariableArray(mv, ByteCodeUtils.toLocalVariables(types));
 
         // now invoke the generic dispatch method.

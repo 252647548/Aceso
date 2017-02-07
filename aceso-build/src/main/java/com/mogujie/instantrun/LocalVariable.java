@@ -23,7 +23,6 @@ import org.objectweb.asm.Type;
  */
 class LocalVariable {
 
-
     public final Type type;
 
     public final int var;

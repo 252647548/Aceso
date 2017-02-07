@@ -21,7 +21,6 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
 import com.google.common.collect.Ordering;
-import com.mogujie.groovy.util.Log;
 import org.gradle.api.GradleException;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.Opcodes;
@@ -37,7 +36,7 @@ import java.util.Set;
 
 abstract class IntSwitch {
 
-    InstantProguardMap.ClassData classData = null;
+    AcesoProguardMap.ClassData classData = null;
     final Function<String, Integer> HASH_METHOD = new Function<String, Integer>() {
         @Override
         public Integer apply(String input) {
@@ -147,7 +146,7 @@ abstract class IntSwitch {
     }
 
     void visit(GeneratorAdapter mv, Set<String> strings, String className) {
-        this.classData = InstantProguardMap.instance().getClassData(className);
+        this.classData = AcesoProguardMap.instance().getClassData(className);
         if (classData == null) {
             throw new GradleException("can not find "+className+" , sure you aceso-mapping is right.");
         }

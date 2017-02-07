@@ -11,7 +11,9 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * Created by wangzhi on 16/12/27.
+ * A ClassWriter used for generating the $helper class.
+ *
+ * @author wangzhi
  */
 public class SuperHelperVisitor extends ClassWriter implements Opcodes {
     IncrementalChangeVisitor visitor;

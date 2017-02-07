@@ -59,8 +59,8 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
         visitedClassName = name;
         visitedSuperName = superName;
 
-        InstantProguardMap.instance().putClass(visitedClassName);
-        access = InstantRunTool.transformClassAccessForInstantRun(access);
+        AcesoProguardMap.instance().putClass(visitedClassName);
+        access = IncrementalTool.transformClassAccessForInstantRun(access);
         super.visit(version, access, name, signature, superName, interfaces);
     }
 
@@ -96,8 +96,8 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
     @Override
     public MethodVisitor visitMethod(int access, String name, String desc, String signature,
                                      String[] exceptions) {
-        InstantProguardMap.instance().putMethod(visitedClassName,InstantRunTool.getMtdSig(name, desc));
-        access = InstantRunTool.transformAccessForInstantRun(access);
+        AcesoProguardMap.instance().putMethod(visitedClassName, IncrementalTool.getMtdSig(name, desc));
+        access = IncrementalTool.transformAccessForInstantRun(access);
 
         MethodVisitor defaultVisitor = super.visitMethod(access, name, desc, signature, exceptions);
         MethodNode method = getMethodByNameInClass(name, desc, classNode);
@@ -182,8 +182,8 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
                 super.visitLabel(start);
                 change = newLocal(MTD_MAP_TYPE);
 
-                push(new Integer(InstantProguardMap.instance().getClassIndex(visitedClassName)));
-                push(new Integer(InstantProguardMap.instance().getMtdIndex(visitedClassName, InstantRunTool.getMtdSig(name, desc))));
+                push(new Integer(AcesoProguardMap.instance().getClassIndex(visitedClassName)));
+                push(new Integer(AcesoProguardMap.instance().getMtdIndex(visitedClassName, IncrementalTool.getMtdSig(name, desc))));
                 invokeStatic(IncrementalVisitor.MTD_MAP_TYPE, Method.getMethod("com.android.tools.fd.runtime.IncrementalChange get(int,int)"));
 
                 storeLocal(change);

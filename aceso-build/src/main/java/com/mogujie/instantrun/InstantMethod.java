@@ -3,7 +3,9 @@ package com.mogujie.instantrun;
 import org.objectweb.asm.commons.Method;
 
 /**
- * Created by wangzhi on 16/12/27.
+ * The class hold oriDesc and owner.
+ *
+ * @author wangzhi
  */
 public class InstantMethod extends Method {
     private String oriDesc;

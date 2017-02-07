@@ -7,9 +7,11 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
 /**
- * Created by wangzhi on 16/12/6.
+ * A tool for byte code processing.
+ *
+ * @author wangzhi
  */
-public class InstantRunTool {
+public class IncrementalTool {
 
     public static byte[] getPatchFileContents(
              ImmutableList<String> patchFileContents,  ImmutableList<Integer> patchIndexContents) {

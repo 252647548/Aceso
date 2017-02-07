@@ -9,9 +9,11 @@ import java.util.Iterator;
 import java.util.Map;
 
 /**
- * Created by wangzhi on 16/12/24.
+ * The aceso's proguard map.
+ *
+ * @author wangzhi
  */
-public class InstantProguardMap {
+public class AcesoProguardMap {
 
     private HashMap<String, ClassData> classesMap;
 
@@ -71,15 +73,15 @@ public class InstantProguardMap {
         }
     }
 
-    private InstantProguardMap() {
+    private AcesoProguardMap() {
         reset();
     }
 
     private static class SINGLETON {
-        private final static InstantProguardMap instance = new InstantProguardMap();
+        private final static AcesoProguardMap instance = new AcesoProguardMap();
     }
 
-    public static InstantProguardMap instance() {
+    public static AcesoProguardMap instance() {
         return SINGLETON.instance;
     }
 

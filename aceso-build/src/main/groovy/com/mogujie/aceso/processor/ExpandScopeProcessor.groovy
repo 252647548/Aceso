@@ -8,8 +8,11 @@ import com.mogujie.groovy.util.Log
 import org.gradle.api.Project
 
 /**
- * Created by wangzhi on 17/2/6.
+ * The class processor for expand class scope.
+ *
+ * @author wangzhi
  */
+
 public class ExpandScopeProcessor extends ClassProcessor {
     ExpandScopeProcessor(Project project, String varName, String varDirName, Extension config) {
         super(project, varName, varDirName, config)

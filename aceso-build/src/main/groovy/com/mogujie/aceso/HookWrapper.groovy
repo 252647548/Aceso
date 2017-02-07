@@ -60,13 +60,13 @@ public class HookWrapper {
     public static void instrument(Project project, File inJar, File outJar,
                                   ArrayList<File> classPath, File mappingFile,
                                   String acesoMapping) {
-        InstantProguardMap.instance().reset()
+        AcesoProguardMap.instance().reset()
         if (Utils.checkFile(acesoMapping)) {
             Log.i("apply instant mapping: " + acesoMapping)
-            InstantProguardMap.instance().readMapping(new File(acesoMapping))
+            AcesoProguardMap.instance().readMapping(new File(acesoMapping))
         }
         inject(project, inJar, outJar, classPath, null, false)
-        InstantProguardMap.instance().printMapping(mappingFile)
+        AcesoProguardMap.instance().printMapping(mappingFile)
     }
 
     /**
@@ -75,7 +75,7 @@ public class HookWrapper {
     public static void fix(Project project, File inJar, File outJar,
                            ArrayList<File> classPathList, HashMap<String, String> proguardMap,
                            String acesoMapping) {
-        InstantProguardMap.instance().readMapping(new File(acesoMapping))
+        AcesoProguardMap.instance().readMapping(new File(acesoMapping))
         inject(project, inJar, outJar, classPathList, proguardMap, true)
     }
 
@@ -135,8 +135,8 @@ public class HookWrapper {
                 zos.write(bytes)
                 zos.closeEntry()
             } else {
-                Log.i("process class count : " + InstantProguardMap.instance().nowClassIndex)
-                Log.i("process mtd count : " + InstantProguardMap.instance().nowMtdIndex)
+                Log.i("process class count : " + AcesoProguardMap.instance().nowClassIndex)
+                Log.i("process mtd count : " + AcesoProguardMap.instance().nowMtdIndex)
             }
             zos.flush()
             zos.close()
@@ -206,7 +206,7 @@ public class HookWrapper {
                                        boolean isHotfix) {
         String entryName = entry.name
         boolean isPatch = IncrementalVisitor.instrumentClass(entry, zipFile, zos, builder, isHotfix)
-        Log.v("class ${entryName}'s mtd count : " + InstantProguardMap.instance().getNowMtdIndex())
+        Log.v("class ${entryName}'s mtd count : " + AcesoProguardMap.instance().getNowMtdIndex())
         entryName = pathToClassNameInPackage(entryName)
         if (isPatch) {
             return entryName
@@ -247,7 +247,7 @@ public class HookWrapper {
             String classPath = classPathList.get(i)
             classNames.add(pathToClassNameInPackage(classPath))
             String classNameInAsm = classPath.substring(0, classPath.lastIndexOf(".class"))
-            InstantProguardMap.ClassData classData = InstantProguardMap.instance().getClassData(classNameInAsm)
+            AcesoProguardMap.ClassData classData = AcesoProguardMap.instance().getClassData(classNameInAsm)
             if (classData == null) {
                 classIndexs.add(i, -1)
             } else {
@@ -256,7 +256,7 @@ public class HookWrapper {
         }
         ImmutableList<String> classNameList = ImmutableList.copyOf(classNames)
         ImmutableList<Integer> classIndexList = ImmutableList.copyOf(classIndexs)
-        return InstantRunTool.getPatchFileContents(classNameList, classIndexList)
+        return IncrementalTool.getPatchFileContents(classNameList, classIndexList)
     }
 
 }

@@ -6,7 +6,7 @@ import com.mogujie.aceso.transoform.HookDexTransform
 import com.mogujie.aceso.util.Util
 import com.mogujie.groovy.util.Log
 import com.mogujie.groovy.util.Utils
-import com.mogujie.instantrun.InstantRunTool
+import com.mogujie.instantrun.IncrementalTool
 
 /**
  * A plugin for generate patch apk.
@@ -24,7 +24,7 @@ public class AcesoFixPlugin extends AcesoBasePlugin {
         if (!Utils.checkFile(new File(config.modifiedJar))) {
             Log.e("modifie jar  not found!")
         }
-        InstantRunTool.setMethodLevelFix(config.methodLevelFix)
+        IncrementalTool.setMethodLevelFix(config.methodLevelFix)
         project.android.applicationVariants.all { variant ->
             doIt(variant)
         }

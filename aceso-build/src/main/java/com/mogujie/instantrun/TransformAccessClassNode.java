@@ -6,7 +6,9 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.ClassNode;
 
 /**
- * Created by wangzhi on 16/12/28.
+ * A ClassNode used for expanding the method and field's scope
+ *
+ * @author wangzhi
  */
 public class TransformAccessClassNode extends ClassNode {
 
@@ -16,13 +18,13 @@ public class TransformAccessClassNode extends ClassNode {
 
     @Override
     public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
-        access = InstantRunTool.transformAccessForInstantRun(access);
+        access = IncrementalTool.transformAccessForInstantRun(access);
         return super.visitMethod(access, name, desc, signature, exceptions);
     }
 
     @Override
     public FieldVisitor visitField(int access, String name, String desc, String signature, Object value) {
-        access = InstantRunTool.transformAccessToPublic(access);
+        access = IncrementalTool.transformAccessToPublic(access);
         return super.visitField(access, name, desc, signature, value);
     }
 }

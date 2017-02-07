@@ -24,12 +24,24 @@ import org.objectweb.asm.tree.LabelNode;
 
 import java.util.List;
 
+/**
+ * A redirection is the part of an instrumented method that calls out to a different implementation.
+ */
 public abstract class Redirection {
 
+    /**
+     * The position where this redirection should happen.
+     */
     private final LabelNode label;
 
+    /**
+     * The types to redirect.
+     */
     protected final List<Type> types;
 
+    /**
+     * The return type.
+     */
     public final Type type;
 
     protected final String mtdName;
@@ -42,7 +54,7 @@ public abstract class Redirection {
 
     protected final String newMtdDesc;
 
-    Redirection( LabelNode label, String visitedClassName,  String mtdName,  String mtdDesc,  List<Type> types,  Type type, boolean isStatic) {
+    Redirection(LabelNode label, String visitedClassName, String mtdName, String mtdDesc, List<Type> types, Type type, boolean isStatic) {
         this.label = label;
         this.types = types;
         this.type = type;
@@ -53,7 +65,9 @@ public abstract class Redirection {
         newMtdDesc = isStatic ? mtdDesc : ("(L" + visitedClassName + ";" + mtdDesc.substring(1));
     }
 
-
+    /**
+     * Adds the instructions to do a generic redirection.
+     */
     protected void redirect(GeneratorAdapter mv, int change) {
         // code to check if a new implementation of the current class is available.
         Label l0 = new Label();

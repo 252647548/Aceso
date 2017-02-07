@@ -5,13 +5,12 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.GeneratorAdapter;
 import org.objectweb.asm.commons.Method;
-import org.objectweb.asm.tree.MethodNode;
-import org.objectweb.asm.util.Textifier;
-import org.objectweb.asm.util.TraceMethodVisitor;
 
 import java.util.List;
 
-
+/**
+ * Bytecode generation utilities to work around some ASM / Dex issues.
+ */
 public class ByteCodeUtils {
 
     public static final String CONSTRUCTOR = "<init>";
@@ -20,7 +19,17 @@ public class ByteCodeUtils {
     private static final Method SHORT_VALUE = Method.getMethod("short shortValue()");
     private static final Method BYTE_VALUE = Method.getMethod("byte byteValue()");
 
-    
+    /**
+     * Generates unboxing bytecode for the passed type. An {@link Object} is expected to be on the
+     * stack when these bytecodes are inserted.
+     *
+     * ASM takes a short cut when dealing with short/byte types and convert them into int rather
+     * than short/byte types. This is not an issue on the jvm nor Android's ART but it is an issue
+     * on Dalvik.
+     *
+     * @param mv the {@link GeneratorAdapter} generating a method implementation.
+     * @param type the expected un-boxed type.
+     */
     public static void unbox(GeneratorAdapter mv, Type type) {
         if (type.equals(Type.SHORT_TYPE)) {
             mv.checkCast(NUMBER_TYPE);
@@ -33,19 +42,9 @@ public class ByteCodeUtils {
         }
     }
 
-    
-    public static String textify( MethodNode method) {
-        Textifier textifier = new Textifier();
-        TraceMethodVisitor trace = new TraceMethodVisitor(textifier);
-        method.accept(trace);
-        String ret = "";
-        for (Object line : textifier.getText()) {
-            ret += line;
-        }
-        return ret;
-    }
-
-    
+    /**
+     * Pushes an array on the stack that contains the value of all the given variables.
+     */
     static void newVariableArray(
              GeneratorAdapter mv,
              List<LocalVariable> variables) {
@@ -54,7 +53,10 @@ public class ByteCodeUtils {
         loadVariableArray(mv, variables, 0);
     }
 
-    
+    /**
+     * Given an array on the stack, it loads it with the values of the given variables stating at
+     * offset.
+     */
     static void loadVariableArray(
              GeneratorAdapter mv,
              List<LocalVariable> variables, int offset) {
@@ -75,28 +77,10 @@ public class ByteCodeUtils {
         }
     }
 
-    
-    static void restoreVariables(
-             GeneratorAdapter mv,
-             List<LocalVariable> variables) {
-        for (int i = 0; i < variables.size(); i++) {
-            LocalVariable variable = variables.get(i);
-            // Duplicates the array on the stack;
-            mv.dup();
-            // Sets up the index
-            mv.push(i);
-            // Gets the Object value
-            mv.arrayLoad(Type.getType(Object.class));
-            // Unboxes to the type of the local variable
-            mv.unbox(variable.type);
-            // Restores the local variable
-            mv.visitVarInsn(variable.type.getOpcode(Opcodes.ISTORE), variable.var);
-        }
-        // Pops the array from the stack.
-        mv.pop();
-    }
 
-    
+    /**
+     * Converts Types to LocalVariables, assuming they start from variable 0.
+     */
     static List<LocalVariable> toLocalVariables( List<Type> types) {
         List<LocalVariable> variables = Lists.newArrayList();
         int stack = 0;
