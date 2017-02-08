@@ -41,12 +41,12 @@ public abstract class ClassProcessor {
 
     String jarName
 
-    ClassProcessor(Project project, String varName, String varDirName, Extension config) {
+    ClassProcessor(Project project, def variant, Extension config) {
         this.project = project
-        this.varName = varName
-        this.varDirName = varDirName
+        this.varName = variant.name.capitalize()
+        this.varDirName = variant.getDirName()
         this.config = config
-        if (GradleUtil.isProguardOpen(project, varName)) {
+        if (GradleUtil.isProguardOpen(variant)) {
             jarName = "main.jar"
         } else {
             jarName = "combined.jar"

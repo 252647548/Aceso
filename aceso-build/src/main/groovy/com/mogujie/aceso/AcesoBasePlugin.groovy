@@ -18,9 +18,12 @@
 
 package com.mogujie.aceso
 
+import com.android.build.gradle.internal.pipeline.TransformTask
 import com.mogujie.aceso.util.FileUtils
+import com.mogujie.aceso.util.GradleUtil
 import com.mogujie.aceso.util.Log
 import com.mogujie.aceso.util.ProguardUtil
+import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 
@@ -87,6 +90,29 @@ public abstract class AcesoBasePlugin implements Plugin<Project> {
                 blackList.add(line.trim())
             }
         }
+    }
+
+    protected void addProguardKeepRule(def variant) {
+
+
+        if (GradleUtil.isProguardOpen(variant)) {
+            TransformTask proguardTask = GradleUtil.getProguardTask(project, variant.name.capitalize())
+            if (proguardTask == null) {
+                throw new GradleException("minifyEnabled is true,but not found proguard task.")
+            }
+            proguardTask.doFirst {
+                File customProFile = GradleUtil.getFileInAceso(project, "proguard",
+                        variant.getDirName(), "aceso-keep.pro")
+                FileUtils.initFile(customProFile)
+                customProFile.write(Constant.KEEP_RULE)
+                Log.i("exist : " + customProFile.exists())
+                // Add this proguard settings file to the list
+                variant.getBuildType().buildType.proguardFiles(customProFile)
+                Log.i("proguard files is ${variant.getBuildType().buildType.getProguardFiles()}")
+            }
+        }
+
+
     }
 
     public HookWrapper.InstrumentFilter initFilter() {

@@ -36,8 +36,8 @@ import org.gradle.api.Project
 
 public class HostClassProcessor extends ClassProcessor {
 
-    HostClassProcessor(Project project, String varName, String varDirName, Extension config) {
-        super(project, varName, varDirName, config)
+    HostClassProcessor(Project project, def variant, Extension config) {
+        super(project, variant, config)
     }
 
     @Override
@@ -55,15 +55,15 @@ public class HostClassProcessor extends ClassProcessor {
         Log.i("process the host class..")
         File allClassesDir = GradleUtil.getFileInAceso(project, Constant.ALL_CLASSES_DIR_NAME,
                 varDirName, null)
-        TransformTask proguardTask = project.tasks.findByName("transformClassesAndResourcesWithProguardFor${varName}")
+        TransformTask proguardTask = GradleUtil.getProguardTask(project,varName)
         if (proguardTask != null) {
             ProguardUtil.instance().initProguardMap(proguardTask.transform.getMappingFile())
-        }else{
+        } else {
             //if proguard is close, we should generate all-classes.jar
             Log.w("proguard is closed, so we will generate all-classes jar in dex task.")
             FileUtils.copy(project, getMergedJar(), allClassesDir)
         }
-        HookWrapper.instrument(project,getMergedJar(), getOutJar(), null,
+        HookWrapper.instrument(project, getMergedJar(), getOutJar(), null,
                 getFileInAceso("mapping", varDirName, "mapping.txt"), config.acesoMapping)
     }
 

@@ -21,8 +21,9 @@ package com.mogujie.aceso.processor
 import com.android.build.gradle.internal.pipeline.TransformTask
 import com.mogujie.aceso.Extension
 import com.mogujie.aceso.HookWrapper
-import com.mogujie.aceso.util.ProguardUtil
+import com.mogujie.aceso.util.GradleUtil
 import com.mogujie.aceso.util.Log
+import com.mogujie.aceso.util.ProguardUtil
 import org.gradle.api.Project
 
 /**
@@ -32,8 +33,8 @@ import org.gradle.api.Project
  */
 
 public class ExpandScopeProcessor extends ClassProcessor {
-    ExpandScopeProcessor(Project project, String varName, String varDirName, Extension config) {
-        super(project, varName, varDirName, config)
+    ExpandScopeProcessor(Project project, def variant, Extension config) {
+        super(project, variant, config)
     }
 
     @Override
@@ -49,7 +50,7 @@ public class ExpandScopeProcessor extends ClassProcessor {
     @Override
     void process() {
         Log.i("expand class in hotfix project..")
-        TransformTask proguardTask = project.tasks.findByName("transformClassesAndResourcesWithProguardFor${varName}")
+        TransformTask proguardTask = GradleUtil.getProguardTask(project,varName)
         if (proguardTask != null) {
             ProguardUtil.instance().initProguardMap(proguardTask.transform.getMappingFile())
         }

@@ -54,14 +54,14 @@ public class AcesoFixPlugin extends AcesoBasePlugin {
         String varDirName = variant.getDirName()
         //create the aceso task
         project.tasks.create("aceso" + varName, AcesoTask, new AcesoTask.HotFixAction(varName))
-
+        addProguardKeepRule(variant)
         if (GradleUtil.isAcesoFix(project)) {
             Log.i "the next will be aceso fix."
             HookTransform.injectTransform(project, variant, new FixClassProcessor(project, varName, varDirName, config),
                     HookDexTransform.BUILDER)
         } else {
             Log.i "the next will expand scope."
-            HookTransform.injectTransform(project, variant, new ExpandScopeProcessor(project, varName, varDirName, config)
+            HookTransform.injectTransform(project, variant, new ExpandScopeProcessor(project, variant, config)
                     , HookDexTransform.BUILDER)
         }
     }

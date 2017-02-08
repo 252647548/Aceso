@@ -18,8 +18,10 @@
 
 package com.mogujie.aceso.util
 
+import com.android.build.gradle.internal.pipeline.TransformTask
 import com.mogujie.aceso.Constant
 import org.gradle.api.Project
+
 /**
  * A Util.
  *
@@ -44,8 +46,12 @@ public class GradleUtil {
         return isNewHotfix
     }
 
-    public static boolean isProguardOpen(Project project, String varName) {
-        return (project.tasks.findByName("transformClassesAndResourcesWithProguardFor${varName}") != null)
+    public static boolean isProguardOpen(def variant) {
+        return variant.getBuildType().buildType.minifyEnabled
+    }
+
+    public static TransformTask getProguardTask(Project project, String varName) {
+        return project.tasks.findByName("transformClassesAndResourcesWithProguardFor${varName}")
     }
 
     public static File getFileInAceso(Project project, String category, String varDirName, String fileName) {
@@ -55,7 +61,6 @@ public class GradleUtil {
             return FileUtils.joinFile(project.buildDir, "intermediates", Constant.ACESO_DIR_NAME, category, varDirName, fileName)
         }
     }
-
 
 
 }

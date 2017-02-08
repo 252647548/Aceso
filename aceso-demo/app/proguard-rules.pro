@@ -26,9 +26,3 @@
 -verbose
 
 -keep class com.mogujie.aceso.demo.MainActivity {*;}
-
--keep class com.android.tools.fd.** {
-    *;
-}
-
--keep class com.android.annotations.FixMtd { *;}

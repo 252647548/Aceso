@@ -21,13 +21,14 @@ package com.mogujie.aceso.processor
 import com.mogujie.aceso.Constant
 import com.mogujie.aceso.Extension
 import org.gradle.api.Project
+
 /**
  * Created by wangzhi on 17/2/8.
  */
 public class ProguardProcessor extends ClassProcessor {
 
-    ProguardProcessor(Project project, String varName, String varDirName, Extension config) {
-        super(project, varName, varDirName, config)
+    ProguardProcessor(Project project, def variant, Extension config) {
+        super(project, variant, config)
     }
 
     @Override

@@ -7,6 +7,7 @@ Aceso是基于Instant Run Hot Swap的Android热修复方案，使用它你能在
 - 支持4.x-7.x机型
 - 方案类似于aop，基本不会有兼容性问题
 - 安装补丁后不用重启，实时生效
+- 支持方法级别的修复
 - 支持新增类
 
 
@@ -65,18 +66,7 @@ Aceso {
 ```
 ```
 
-4.如果你开启了混淆，则需要在规则文件中加入：
-
-```
--keep class com.android.tools.fd.** {
-    *;
-}
-
--keep class com.android.annotations.FixMtd { *;}
-
-```
-
-5.每次**发布版本**时需要将module目录下的build/intermediates/aceso文件夹保存下来
+4.每次**发布版本**时需要将module目录下的build/intermediates/aceso文件夹保存下来
  
 
 ##Generate Patch

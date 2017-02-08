@@ -45,13 +45,14 @@ public class AcesoHostPlugin extends AcesoBasePlugin {
         if (config.disableInstrumentDebug && varName.toLowerCase().contains("debug")) {
             return;
         }
+        addProguardKeepRule(variant)
         //inject proguard tramsform
         HookTransform.injectTransform(project, variant,
-                new ProguardProcessor(project, varName, varDirName, config),
+                new ProguardProcessor(project, variant, config),
                 HookProguardTransform.BUILDER)
         //inject dex tramsform
         HookTransform.injectTransform(project, variant,
-                new HostClassProcessor(project, varName, varDirName, config),
+                new HostClassProcessor(project, variant, config),
                 HookDexTransform.BUILDER)
     }
 
