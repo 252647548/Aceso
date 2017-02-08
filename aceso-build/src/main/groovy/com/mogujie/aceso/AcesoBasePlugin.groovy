@@ -32,7 +32,6 @@ import org.gradle.api.Project
 
 public abstract class AcesoBasePlugin implements Plugin<Project> {
 
-    public static final String ACESO_DIR_NAME = "aceso"
     public static def MATCHER_R = '''.*/R\\$.*\\.class|.*/R\\.class'''
 
     Project project
@@ -75,8 +74,9 @@ public abstract class AcesoBasePlugin implements Plugin<Project> {
     protected void initBlacklist() {
         File blackListFile;
         blackList = new ArrayList<>()
+        blackList.add("com/android/tools/fd/runtime")
         if (FileUtils.isStringEmpty(config.blackListPath)) {
-            blackListFile = new File(project.projectDir, 'aceso-blackList.txt')
+            blackListFile = new File(project.projectDir, 'aceso-blacklist.txt')
         } else {
             blackListFile = new File(config.blackListPath)
         }

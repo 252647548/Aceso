@@ -19,7 +19,10 @@
 package com.mogujie.aceso
 
 import com.mogujie.aceso.processor.HostClassProcessor
+import com.mogujie.aceso.processor.ProguardProcessor
 import com.mogujie.aceso.transoform.HookDexTransform
+import com.mogujie.aceso.transoform.HookProguardTransform
+import com.mogujie.aceso.transoform.HookTransform
 
 /**
  * A plugin for instrument the host project.
@@ -42,7 +45,14 @@ public class AcesoHostPlugin extends AcesoBasePlugin {
         if (config.disableInstrumentDebug && varName.toLowerCase().contains("debug")) {
             return;
         }
-        HookDexTransform.injectDexTransform(project, variant, new HostClassProcessor(project, varName, varDirName, config))
+        //inject proguard tramsform
+        HookTransform.injectTransform(project, variant,
+                new ProguardProcessor(project, varName, varDirName, config),
+                HookProguardTransform.BUILDER)
+        //inject dex tramsform
+        HookTransform.injectTransform(project, variant,
+                new HostClassProcessor(project, varName, varDirName, config),
+                HookDexTransform.BUILDER)
     }
 
 }

@@ -17,8 +17,12 @@
  */
 
 package com.mogujie.aceso.processor
+
+import com.mogujie.aceso.Constant
 import com.mogujie.aceso.Extension
 import com.mogujie.aceso.HookWrapper
+import com.mogujie.aceso.util.FileUtils
+import com.mogujie.aceso.util.GradleUtil
 import com.mogujie.aceso.util.Log
 import org.gradle.api.Project
 
@@ -47,6 +51,13 @@ public class HostClassProcessor extends ClassProcessor {
     @Override
     void process() {
         Log.i("process the host class..")
+        File allClassesDir = GradleUtil.getFileInAceso(project, Constant.ALL_CLASSES_DIR_NAME,
+                varDirName, null)
+        //if proguard is close, we should generate all-classes.jar
+        if (!GradleUtil.isProguardOpen(project, varName)) {
+            Log.w("proguard is closed, so we will generate all-classes jar in dex task.")
+            FileUtils.copy(project, getMergedJar(), allClassesDir)
+        }
         HookWrapper.instrument(project,getMergedJar(), getOutJar(), null,
                 getFileInAceso("mapping", varDirName, "mapping.txt"), config.acesoMapping)
     }

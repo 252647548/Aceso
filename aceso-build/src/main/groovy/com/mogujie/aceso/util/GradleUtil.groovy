@@ -18,6 +18,7 @@
 
 package com.mogujie.aceso.util
 
+import com.mogujie.aceso.Constant
 import org.gradle.api.Project
 /**
  * A Util.
@@ -31,7 +32,6 @@ public class GradleUtil {
         return "${project.android.getSdkDirectory()}/platforms/${project.android.getCompileSdkVersion()}/android.jar"
     }
 
-
     /**
      * Whether it is executed acesoXXX task.
      */
@@ -44,10 +44,18 @@ public class GradleUtil {
         return isNewHotfix
     }
 
-
-    public static boolean proguardOpen(Project project, String varName) {
+    public static boolean isProguardOpen(Project project, String varName) {
         return (project.tasks.findByName("transformClassesAndResourcesWithProguardFor${varName}") != null)
     }
+
+    public static File getFileInAceso(Project project, String category, String varDirName, String fileName) {
+        if (FileUtils.isStringEmpty(fileName)) {
+            return FileUtils.joinFile(project.buildDir, "intermediates", Constant.ACESO_DIR_NAME, category, varDirName)
+        } else {
+            return FileUtils.joinFile(project.buildDir, "intermediates", Constant.ACESO_DIR_NAME, category, varDirName, fileName)
+        }
+    }
+
 
 
 }

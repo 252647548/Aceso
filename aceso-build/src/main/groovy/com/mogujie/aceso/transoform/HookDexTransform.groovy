@@ -17,12 +17,9 @@
  */
 
 package com.mogujie.aceso.transoform
-
 import com.android.SdkConstants
-import com.android.annotations.NonNull
 import com.android.build.api.transform.*
 import com.android.build.gradle.internal.pipeline.TransformInvocationBuilder
-import com.android.build.gradle.internal.pipeline.TransformTask
 import com.android.build.gradle.internal.transforms.DexTransform
 import com.android.build.gradle.internal.transforms.JarMerger
 import com.android.builder.signing.SignedJarBuilder
@@ -31,88 +28,27 @@ import com.google.common.collect.Lists
 import com.mogujie.aceso.processor.ClassProcessor
 import com.mogujie.aceso.util.Log
 import org.gradle.api.Project
-import org.gradle.api.Task
-import org.gradle.api.execution.TaskExecutionGraph
-import org.gradle.api.execution.TaskExecutionGraphListener
-
-import java.lang.reflect.Field
-
 /**
  * This class hook the real dex transform,
  * and process the class file.
  *
  * @author wangzhi
  */
+public class HookDexTransform extends HookTransform {
 
-public class HookDexTransform extends Transform {
 
-    Project project
-
-    String varName
-
-    String varDirName
-
-    def variant
-
-    DexTransform dexTransform
-
-    ClassProcessor processor
-
-    HookDexTransform(Project project, def variant, DexTransform dexTransform, ClassProcessor processor) {
-        this.dexTransform = dexTransform
-        this.project = project
-        this.variant = variant
-        this.varName = variant.name.capitalize()
-        this.varDirName = variant.getDirName()
-        this.processor = processor
-    }
-
-    @NonNull
-    @Override
-    public Set<QualifiedContent.ContentType> getOutputTypes() {
-        return dexTransform.getOutputTypes();
-    }
-
-    @NonNull
-    @Override
-    public Collection<File> getSecondaryFileInputs() {
-        return dexTransform.getSecondaryFileInputs()
-    }
-
-    @NonNull
-    @Override
-    public Collection<File> getSecondaryDirectoryOutputs() {
-        return dexTransform.getSecondaryDirectoryOutputs()
-    }
-
-    @NonNull
-    @Override
-    public Map<String, Object> getParameterInputs() {
-        return dexTransform.getParameterInputs()
-    }
-
-    @Override
-    String getName() {
-        return dexTransform.getName()
-    }
-
-    @Override
-    Set<QualifiedContent.ContentType> getInputTypes() {
-        return dexTransform.getInputTypes()
-    }
-
-    @Override
-    Set<QualifiedContent.Scope> getScopes() {
-        return dexTransform.getScopes()
-    }
-
-    @Override
-    boolean isIncremental() {
-        return dexTransform.isIncremental()
+    HookDexTransform(Project project, def variant, Transform transform, ClassProcessor processor) {
+        super(project, variant, transform, processor)
     }
 
     @Override
     void transform(TransformInvocation transformInvocation) throws TransformException, IOException, InterruptedException {
+
+        if (processor == null) {
+            transform.transform(transformInvocation)
+            return
+        }
+
         List<JarInput> jarInputs = Lists.newArrayList();
         List<DirectoryInput> dirInputs = Lists.newArrayList();
 
@@ -157,7 +93,7 @@ public class HookDexTransform extends Transform {
         builder.addReferencedInputs(transformInvocation.getReferencedInputs())
         builder.addSecondaryInputs(transformInvocation.getSecondaryInputs())
         builder.setIncrementalMode(transformInvocation.isIncremental())
-        dexTransform.transform(builder.build())
+        transform.transform(builder.build())
 
     }
 
@@ -207,40 +143,20 @@ public class HookDexTransform extends Transform {
         return ImmutableList.of(transformInput)
     }
 
-    /**
-     * Replace the dex task 's transform with HookDexTransform
-     */
-    public static void injectDexTransform(Project project, def variant, ClassProcessor processor) {
-        Log.i("prepare inject dex transform ")
-        project.getGradle().getTaskGraph().addTaskExecutionGraphListener(new TaskExecutionGraphListener() {
-            @Override
-            public void graphPopulated(TaskExecutionGraph taskGraph) {
-                for (Task task : taskGraph.getAllTasks()) {
-                    if (task.getProject().equals(project)
-                            && task instanceof TransformTask
-                            && task.name.toLowerCase().contains(variant.name.toLowerCase())) {
-                        if (isDexTransform(((TransformTask) task).getTransform())
-                                && !(((TransformTask) task).getTransform() instanceof HookDexTransform)) {
-                            Log.w("find dex transform. class: " + task.transform.getClass() + ". task name: " + task.name)
-                            DexTransform dexTransform = task.transform
-                            HookDexTransform hookDexTransform = new HookDexTransform(project,
-                                    variant, dexTransform, processor)
-                            Field field = TransformTask.class.getDeclaredField("transform")
-                            field.setAccessible(true)
-                            field.set(task, hookDexTransform)
-                            break;
-                        }
-                    }
-                }
-            }
-        });
 
-    }
+    public static final HookTransform.TransformBuilder BUILDER = new HookTransform.TransformBuilder() {
 
-    public static isDexTransform(Transform transform) {
-        //some plugin may replace the dex transform,
-        //so if transform's name is dex,we think is dex transform.
-        return ((transform instanceof DexTransform) || transform.getName().equals("dex"))
+        HookTransform build(Project project, Object variant,
+                            Transform transform, ClassProcessor processor) {
+            return new HookDexTransform(project, variant, transform, processor)
+        }
+
+        boolean isExactTransform(Transform transform) {
+            return (((transform instanceof DexTransform) || transform.getName().equals("dex"))
+                    && !(transform instanceof HookDexTransform))
+
+        }
+
     }
 
 

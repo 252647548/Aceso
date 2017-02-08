@@ -76,14 +76,8 @@ Aceso {
 
 ```
 
-5.每次**发布版本**时需要保存一些文件：
-
-- 将module目录下的build/intermediates/aceso/instrument/../*.jar保存下来，它是发布hotfix时需要的modifiedJar。
-
-- 将module目录下的build/intermediates/aceso/mapping/../mapping.txt保存下来，它是发布hotfix时需要的acesoMapping。
-
-- 如果你开启了混淆，在编译完成以后，需要将混淆关闭，执行gradle/.gradlew transformClassesWithDexFor${Flavor}Release，Flavor是你在build.gradle指定的，默认为空。然后将module目录下的build/intermediates/aceso/merged/../*.jar
-,它是发布hotfix时需要的allClassesJar 
+5.每次**发布版本**时需要将module目录下的build/intermediates/aceso文件夹保存下来
+ 
 
 ##Generate Patch
 1.你需要创建一个额外fix的工程（可参考demo）

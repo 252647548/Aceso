@@ -63,9 +63,9 @@ dependencies {
 project.afterEvaluate {
     File allClassesJar = null
     if (buildTypeStr().contains("debug")) {
-        allClassesJar = project.rootProject.file("../aceso-demo/app/build/intermediates/aceso/merged/full/${buildTypeStr()}/combined.jar")
+        allClassesJar = project.rootProject.file("../aceso-demo/app/build/intermediates/aceso/all-classes/full/debug/combined.jar")
     } else {
-        allClassesJar = project.rootProject.file("../aceso-demo/app/build/intermediates/aceso/merged/full/debug/combined.jar")
+        allClassesJar = project.rootProject.file("../aceso-demo/app/build/intermediates/aceso/all-classes/full/release/main.jar")
     }
     copy {
         from allClassesJar

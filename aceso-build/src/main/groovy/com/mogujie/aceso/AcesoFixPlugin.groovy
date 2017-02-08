@@ -21,9 +21,10 @@ package com.mogujie.aceso
 import com.mogujie.aceso.processor.ExpandScopeProcessor
 import com.mogujie.aceso.processor.FixClassProcessor
 import com.mogujie.aceso.transoform.HookDexTransform
+import com.mogujie.aceso.transoform.HookTransform
+import com.mogujie.aceso.util.FileUtils
 import com.mogujie.aceso.util.GradleUtil
 import com.mogujie.aceso.util.Log
-import com.mogujie.aceso.util.FileUtils
 import com.mogujie.instantrun.IncrementalTool
 
 /**
@@ -56,10 +57,12 @@ public class AcesoFixPlugin extends AcesoBasePlugin {
 
         if (GradleUtil.isAcesoFix(project)) {
             Log.i "the next will be aceso fix."
-            HookDexTransform.injectDexTransform(project, variant, new FixClassProcessor(project, varName, varDirName, config))
+            HookTransform.injectTransform(project, variant, new FixClassProcessor(project, varName, varDirName, config),
+                    HookDexTransform.BUILDER)
         } else {
             Log.i "the next will expand scope."
-            HookDexTransform.injectDexTransform(project, variant, new ExpandScopeProcessor(project, varName, varDirName, config))
+            HookTransform.injectTransform(project, variant, new ExpandScopeProcessor(project, varName, varDirName, config)
+                    , HookDexTransform.BUILDER)
         }
     }
 
