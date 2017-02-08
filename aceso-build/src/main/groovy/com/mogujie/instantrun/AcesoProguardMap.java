@@ -1,6 +1,6 @@
 package com.mogujie.instantrun;
 
-import com.mogujie.groovy.util.Utils;
+import com.mogujie.aceso.util.FileUtils;
 import org.gradle.api.GradleException;
 
 import java.io.*;
@@ -207,7 +207,7 @@ public class AcesoProguardMap {
         if (mappingFile == null) {
             return;
         }
-        Utils.initParentFile(mappingFile);
+        FileUtils.initParentFile(mappingFile);
 
 
         final StringBuilder sb = new StringBuilder();
@@ -250,7 +250,7 @@ public class AcesoProguardMap {
             }
 
         });
-        Utils.writeFile(mappingFile, sb.toString().getBytes());
+        FileUtils.writeFile(mappingFile, sb.toString().getBytes());
     }
 
 

@@ -20,8 +20,8 @@ package com.mogujie.aceso.processor
 
 import com.mogujie.aceso.AcesoBasePlugin
 import com.mogujie.aceso.Extension
-import com.mogujie.aceso.util.Util
-import com.mogujie.groovy.util.Utils
+import com.mogujie.aceso.util.GradleUtil
+import com.mogujie.aceso.util.FileUtils
 import org.gradle.api.Project
 
 /**
@@ -47,7 +47,7 @@ public abstract class ClassProcessor {
         this.varName = varName
         this.varDirName = varDirName
         this.config = config
-        if (Util.proguardOpen(project, varName)) {
+        if (GradleUtil.proguardOpen(project, varName)) {
             jarName = "main.jar"
         } else {
             jarName = "combined.jar"
@@ -74,15 +74,15 @@ public abstract class ClassProcessor {
      * init env
      */
     void prepare() {
-        Util.initFile(getMergedJar())
-        Util.initFile(getOutJar())
+        FileUtils.initFile(getMergedJar())
+        FileUtils.initFile(getOutJar())
     }
 
     protected File getFileInAceso(String category, String varDirName, String fileName) {
-        if (Utils.isStringEmpty(fileName)) {
-            return Utils.joinFile(project.buildDir, "intermediates", AcesoBasePlugin.ACESO_DIR_NAME, category, varDirName)
+        if (FileUtils.isStringEmpty(fileName)) {
+            return FileUtils.joinFile(project.buildDir, "intermediates", AcesoBasePlugin.ACESO_DIR_NAME, category, varDirName)
         } else {
-            return Utils.joinFile(project.buildDir, "intermediates", AcesoBasePlugin.ACESO_DIR_NAME, category, varDirName, fileName)
+            return FileUtils.joinFile(project.buildDir, "intermediates", AcesoBasePlugin.ACESO_DIR_NAME, category, varDirName, fileName)
         }
     }
 

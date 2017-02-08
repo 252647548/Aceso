@@ -29,7 +29,7 @@ import com.android.builder.signing.SignedJarBuilder
 import com.google.common.collect.ImmutableList
 import com.google.common.collect.Lists
 import com.mogujie.aceso.processor.ClassProcessor
-import com.mogujie.groovy.util.Log
+import com.mogujie.aceso.util.Log
 import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.execution.TaskExecutionGraph

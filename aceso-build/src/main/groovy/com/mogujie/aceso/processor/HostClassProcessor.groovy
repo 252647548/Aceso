@@ -19,7 +19,7 @@
 package com.mogujie.aceso.processor
 import com.mogujie.aceso.Extension
 import com.mogujie.aceso.HookWrapper
-import com.mogujie.groovy.util.Log
+import com.mogujie.aceso.util.Log
 import org.gradle.api.Project
 
 /**

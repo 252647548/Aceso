@@ -17,7 +17,7 @@
 package com.mogujie.instantrun;
 
 
-import com.mogujie.groovy.util.Log;
+import com.mogujie.aceso.util.Log;
 import org.objectweb.asm.*;
 import org.objectweb.asm.commons.GeneratorAdapter;
 import org.objectweb.asm.commons.Method;

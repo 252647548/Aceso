@@ -1,5 +1,5 @@
 package com.mogujie.aceso
-import com.mogujie.groovy.util.Log
+import com.mogujie.aceso.util.Log
 import org.gradle.api.DefaultTask
 import org.gradle.api.tasks.TaskAction
 

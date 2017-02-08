@@ -17,8 +17,8 @@
 package com.mogujie.instantrun;
 
 import com.google.common.collect.ImmutableList;
-import com.mogujie.groovy.util.Log;
-import com.mogujie.groovy.util.Utils;
+import com.mogujie.aceso.util.Log;
+import com.mogujie.aceso.util.FileUtils;
 import org.gradle.api.GradleException;
 import org.objectweb.asm.*;
 import org.objectweb.asm.commons.GeneratorAdapter;
@@ -213,7 +213,7 @@ public class IncrementalVisitor extends ClassVisitor {
             ZipFile zipFile,
             ZipOutputStream zos,
              VisitorBuilder visitorBuilder, boolean isHotfix) throws IOException {
-        byte[] classBytes = Utils.toByteArray(zipFile.getInputStream(entry));
+        byte[] classBytes = FileUtils.toByteArray(zipFile.getInputStream(entry));
         ClassReader classReader = new ClassReader(classBytes);
         // override the getCommonSuperClass to use the thread context class loader instead of
         // the system classloader. This is useful as ASM needs to load classes from the project

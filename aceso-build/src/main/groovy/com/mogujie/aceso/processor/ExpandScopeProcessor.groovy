@@ -21,8 +21,8 @@ package com.mogujie.aceso.processor
 import com.android.build.gradle.internal.pipeline.TransformTask
 import com.mogujie.aceso.Extension
 import com.mogujie.aceso.HookWrapper
-import com.mogujie.aceso.util.ProguardTool
-import com.mogujie.groovy.util.Log
+import com.mogujie.aceso.util.ProguardUtil
+import com.mogujie.aceso.util.Log
 import org.gradle.api.Project
 
 /**
@@ -51,7 +51,7 @@ public class ExpandScopeProcessor extends ClassProcessor {
         Log.i("expand class in hotfix project..")
         TransformTask proguardTask = project.tasks.findByName("transformClassesAndResourcesWithProguardFor${varName}")
         if (proguardTask != null) {
-            ProguardTool.instance().initProguardMap(proguardTask.transform.getMappingFile())
+            ProguardUtil.instance().initProguardMap(proguardTask.transform.getMappingFile())
         }
         HookWrapper.expandScope(getMergedJar(), getOutJar())
     }

@@ -17,15 +17,13 @@
  */
 
 package com.mogujie.aceso.processor
-
 import com.android.build.gradle.internal.pipeline.TransformTask
 import com.mogujie.aceso.Extension
 import com.mogujie.aceso.HookWrapper
-import com.mogujie.aceso.util.ProguardTool
-import com.mogujie.aceso.util.Util
-import com.mogujie.groovy.util.Log
+import com.mogujie.aceso.util.ProguardUtil
+import com.mogujie.aceso.util.Log
+import com.mogujie.aceso.util.FileUtils
 import org.gradle.api.Project
-
 /**
  * The class processor for generate the hotfix file.
  *
@@ -51,12 +49,12 @@ class FixClassProcessor extends ClassProcessor {
     @Override
     void process() {
         Log.i("generate the fix class..")
-        File fixJar = Util.initFile(getOutJar())
+        File fixJar = FileUtils.initFile(getOutJar())
         HashMap<String, String> proguardMap = null
         TransformTask proguardTask = project.tasks.findByName("transformClassesAndResourcesWithProguardFor${varName}")
         if (proguardTask != null) {
-            ProguardTool.instance().initProguardMap(proguardTask.transform.getMappingFile())
-            proguardMap = ProguardTool.instance().getProguardMap()
+            ProguardUtil.instance().initProguardMap(proguardTask.transform.getMappingFile())
+            proguardMap = ProguardUtil.instance().getProguardMap()
         }
         ArrayList<File> classPath = new ArrayList()
         classPath.add(new File(config.modifiedJar))

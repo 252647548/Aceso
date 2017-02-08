@@ -24,17 +24,17 @@ package com.mogujie.aceso.util
  * @author wangzhi
  */
 
-public class ProguardTool {
+public class ProguardUtil {
 
 
-    private ProguardTool() {
+    private ProguardUtil() {
     }
 
     private static class SINGLETON {
-        private final static ProguardTool instance = new ProguardTool();
+        private final static ProguardUtil instance = new ProguardUtil();
     }
 
-    public static ProguardTool instance() {
+    public static ProguardUtil instance() {
         return SINGLETON.instance;
     }
     private HashMap<String, String> proguardMap = new HashMap<>();

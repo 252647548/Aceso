@@ -20,10 +20,10 @@ package com.mogujie.aceso
 
 import com.google.common.collect.ImmutableList
 import com.google.common.collect.Iterables
-import com.mogujie.aceso.util.Util
-import com.mogujie.groovy.traversal.ZipTraversal
-import com.mogujie.groovy.util.Log
-import com.mogujie.groovy.util.Utils
+import com.mogujie.aceso.util.GradleUtil
+import com.mogujie.aceso.traversal.ZipTraversal
+import com.mogujie.aceso.util.Log
+import com.mogujie.aceso.util.FileUtils
 import com.mogujie.instantrun.*
 import org.gradle.api.GradleException
 import org.gradle.api.Project
@@ -79,7 +79,7 @@ public class HookWrapper {
                                   ArrayList<File> classPath, File mappingFile,
                                   String acesoMapping) {
         AcesoProguardMap.instance().reset()
-        if (Utils.checkFile(acesoMapping)) {
+        if (FileUtils.checkFile(acesoMapping)) {
             Log.i("apply instant mapping: " + acesoMapping)
             AcesoProguardMap.instance().readMapping(new File(acesoMapping))
         }
@@ -109,7 +109,7 @@ public class HookWrapper {
         if (classPath != null) {
             newClassPath.addAll(classPath)
         }
-        File androidJar = new File(Util.getAndroidSdkPath(project))
+        File androidJar = new File(GradleUtil.getAndroidSdkPath(project))
         if (!androidJar.exists()) {
             throw new RuntimeException("not found android jar.")
         }
@@ -177,7 +177,7 @@ public class HookWrapper {
                                     HashMap<String, String> proguardMap) {
         if (!isNewClass(entry.name, classPath, proguardMap)) {
             String addEntryName = processClassInternal(IncrementalChangeVisitor.VISITOR_BUILDER, zos, zipFile, entry, true)
-            if (!Utils.isStringEmpty(addEntryName)) {
+            if (!FileUtils.isStringEmpty(addEntryName)) {
                 fixClassList.add(entry.name)
             }
         } else {
@@ -214,7 +214,7 @@ public class HookWrapper {
     private static void putEntry(ZipOutputStream zos, ZipFile zipFile, ZipEntry entry) {
         ZipEntry newEntry = new ZipEntry(entry.name)
         zos.putNextEntry(newEntry)
-        zos.write(Utils.toByteArray(zipFile.getInputStream(entry)))
+        zos.write(FileUtils.toByteArray(zipFile.getInputStream(entry)))
         zos.closeEntry()
     }
 

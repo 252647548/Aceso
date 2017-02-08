@@ -21,9 +21,9 @@ package com.mogujie.aceso
 import com.mogujie.aceso.processor.ExpandScopeProcessor
 import com.mogujie.aceso.processor.FixClassProcessor
 import com.mogujie.aceso.transoform.HookDexTransform
-import com.mogujie.aceso.util.Util
-import com.mogujie.groovy.util.Log
-import com.mogujie.groovy.util.Utils
+import com.mogujie.aceso.util.GradleUtil
+import com.mogujie.aceso.util.Log
+import com.mogujie.aceso.util.FileUtils
 import com.mogujie.instantrun.IncrementalTool
 
 /**
@@ -36,10 +36,10 @@ public class AcesoFixPlugin extends AcesoBasePlugin {
 
     @Override
     protected void realApply() {
-        if (Utils.isStringEmpty(config.modifiedJar)) {
+        if (FileUtils.isStringEmpty(config.modifiedJar)) {
             config.modifiedJar = new File(project.projectDir, "modified.jar").absolutePath
         }
-        if (!Utils.checkFile(new File(config.modifiedJar))) {
+        if (!FileUtils.checkFile(new File(config.modifiedJar))) {
             Log.e("modifie jar  not found!")
         }
         IncrementalTool.setMethodLevelFix(config.methodLevelFix)
@@ -54,7 +54,7 @@ public class AcesoFixPlugin extends AcesoBasePlugin {
         //create the aceso task
         project.tasks.create("aceso" + varName, AcesoTask, new AcesoTask.HotFixAction(varName))
 
-        if (Util.isAcesoFix(project)) {
+        if (GradleUtil.isAcesoFix(project)) {
             Log.i "the next will be aceso fix."
             HookDexTransform.injectDexTransform(project, variant, new FixClassProcessor(project, varName, varDirName, config))
         } else {

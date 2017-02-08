@@ -18,9 +18,9 @@
 
 package com.mogujie.aceso
 
-import com.mogujie.aceso.util.ProguardTool
-import com.mogujie.groovy.util.Log
-import com.mogujie.groovy.util.Utils
+import com.mogujie.aceso.util.ProguardUtil
+import com.mogujie.aceso.util.Log
+import com.mogujie.aceso.util.FileUtils
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 
@@ -49,13 +49,13 @@ public abstract class AcesoBasePlugin implements Plugin<Project> {
             Log.logLevel = config.logLevel
             if (!config.disable) {
 
-                if (Utils.isStringEmpty(config.acesoMapping)) {
+                if (FileUtils.isStringEmpty(config.acesoMapping)) {
                     config.acesoMapping = new File(project.projectDir, "aceso-mapping.txt").absolutePath
                 }
 
                 initBlacklist()
 
-                if (!Utils.checkFile(config.acesoMapping)) {
+                if (!FileUtils.checkFile(config.acesoMapping)) {
                     Log.w("aceso mapping not found!")
                 }
                 HookWrapper.filter = initFilter()
@@ -75,7 +75,7 @@ public abstract class AcesoBasePlugin implements Plugin<Project> {
     protected void initBlacklist() {
         File blackListFile;
         blackList = new ArrayList<>()
-        if (Utils.isStringEmpty(config.blackListPath)) {
+        if (FileUtils.isStringEmpty(config.blackListPath)) {
             blackListFile = new File(project.projectDir, 'aceso-blackList.txt')
         } else {
             blackListFile = new File(config.blackListPath)
@@ -89,7 +89,7 @@ public abstract class AcesoBasePlugin implements Plugin<Project> {
         }
     }
 
-    public static HookWrapper.InstrumentFilter initFilter() {
+    public HookWrapper.InstrumentFilter initFilter() {
 
         return new HookWrapper.InstrumentFilter() {
             @Override
@@ -102,8 +102,8 @@ public abstract class AcesoBasePlugin implements Plugin<Project> {
                     return false
                 }
 
-                if (ProguardTool.instance().getProguardMap().size() > 0) {
-                    name = ProguardTool.instance().getProguardMap().get(name)
+                if (ProguardUtil.instance().getProguardMap().size() > 0) {
+                    name = ProguardUtil.instance().getProguardMap().get(name)
                 }
 
                 for (String str : blackList) {
