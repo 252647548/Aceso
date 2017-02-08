@@ -38,7 +38,7 @@ public class AcesoFixPlugin extends AcesoBasePlugin {
     @Override
     protected void realApply() {
         if (FileUtils.isStringEmpty(config.modifiedJar)) {
-            config.modifiedJar = new File(project.projectDir, "modified.jar").absolutePath
+            config.modifiedJar = new File(project.projectDir, Constant.INSTRUMENT_JAR).absolutePath
         }
         if (!FileUtils.checkFile(new File(config.modifiedJar))) {
             Log.e("modifie jar  not found!")
@@ -57,7 +57,7 @@ public class AcesoFixPlugin extends AcesoBasePlugin {
         addProguardKeepRule(variant)
         if (GradleUtil.isAcesoFix(project)) {
             Log.i "the next will be aceso fix."
-            HookTransform.injectTransform(project, variant, new FixClassProcessor(project, varName, varDirName, config),
+            HookTransform.injectTransform(project, variant, new FixClassProcessor(project, variant, config),
                     HookDexTransform.BUILDER)
         } else {
             Log.i "the next will expand scope."

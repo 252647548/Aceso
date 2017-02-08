@@ -17,9 +17,7 @@
  */
 
 package com.mogujie.aceso.processor
-
 import com.android.build.gradle.internal.pipeline.TransformTask
-import com.mogujie.aceso.Constant
 import com.mogujie.aceso.Extension
 import com.mogujie.aceso.HookWrapper
 import com.mogujie.aceso.util.FileUtils
@@ -28,12 +26,13 @@ import com.mogujie.aceso.util.Log
 import com.mogujie.aceso.util.ProguardUtil
 import org.gradle.api.Project
 
+import static com.mogujie.aceso.Constant.*
+
 /**
  * The class processor for instrument class file in host project.
  *
  * @author wangzhi
  */
-
 public class HostClassProcessor extends ClassProcessor {
 
     HostClassProcessor(Project project, def variant, Extension config) {
@@ -42,20 +41,20 @@ public class HostClassProcessor extends ClassProcessor {
 
     @Override
     File getMergedJar() {
-        return getFileInAceso("merged", varDirName, jarName)
+        return getFileInAceso(MERGED_DIR, varDirName, MERGED_HOST_JAR)
     }
 
     @Override
     File getOutJar() {
-        return getFileInAceso("instrument", varDirName, jarName)
+        return getFileInAceso(INSTRUMENT_DIR, varDirName, INSTRUMENT_JAR)
     }
 
     @Override
     void process() {
         Log.i("process the host class..")
-        File allClassesDir = GradleUtil.getFileInAceso(project, Constant.ALL_CLASSES_DIR_NAME,
+        File allClassesDir = GradleUtil.getFileInAceso(project, ALL_CLASSES_DIR,
                 varDirName, null)
-        TransformTask proguardTask = GradleUtil.getProguardTask(project,varName)
+        TransformTask proguardTask = GradleUtil.getProguardTask(project, varName)
         if (proguardTask != null) {
             ProguardUtil.instance().initProguardMap(proguardTask.transform.getMappingFile())
         } else {
@@ -64,7 +63,7 @@ public class HostClassProcessor extends ClassProcessor {
             FileUtils.copy(project, getMergedJar(), allClassesDir)
         }
         HookWrapper.instrument(project, getMergedJar(), getOutJar(), null,
-                getFileInAceso("mapping", varDirName, "mapping.txt"), config.acesoMapping)
+                getFileInAceso("mapping", varDirName, ACESO_MAPPING), config.acesoMapping)
     }
 
 

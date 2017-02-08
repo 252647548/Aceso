@@ -26,12 +26,13 @@ import com.mogujie.aceso.util.Log
 import com.mogujie.aceso.util.ProguardUtil
 import org.gradle.api.Project
 
+import static com.mogujie.aceso.Constant.*
+
 /**
  * The class processor for expand class scope.
  *
  * @author wangzhi
  */
-
 public class ExpandScopeProcessor extends ClassProcessor {
     ExpandScopeProcessor(Project project, def variant, Extension config) {
         super(project, variant, config)
@@ -39,18 +40,18 @@ public class ExpandScopeProcessor extends ClassProcessor {
 
     @Override
     File getMergedJar() {
-        return getFileInAceso("merged", varDirName, jarName)
+        return getFileInAceso(MERGED_DIR, varDirName, MERGED_EXPAND_JAR)
     }
 
     @Override
     File getOutJar() {
-        return getFileInAceso("expand", varDirName, jarName)
+        return getFileInAceso(EXPAND_DIR, varDirName, EXPAND_JAR)
     }
 
     @Override
     void process() {
         Log.i("expand class in hotfix project..")
-        TransformTask proguardTask = GradleUtil.getProguardTask(project,varName)
+        TransformTask proguardTask = GradleUtil.getProguardTask(project, varName)
         if (proguardTask != null) {
             ProguardUtil.instance().initProguardMap(proguardTask.transform.getMappingFile())
         }

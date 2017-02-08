@@ -18,9 +18,11 @@
 
 package com.mogujie.aceso.processor
 
-import com.mogujie.aceso.Constant
 import com.mogujie.aceso.Extension
 import org.gradle.api.Project
+
+import static com.mogujie.aceso.Constant.ALL_CLASSES_DIR
+import static com.mogujie.aceso.Constant.ALL_CLASSES_JAR
 
 /**
  * Created by wangzhi on 17/2/8.
@@ -33,7 +35,7 @@ public class ProguardProcessor extends ClassProcessor {
 
     @Override
     File getMergedJar() {
-        return getFileInAceso(Constant.ALL_CLASSES_DIR_NAME, varDirName, jarName)
+        return getFileInAceso(ALL_CLASSES_DIR, varDirName, ALL_CLASSES_JAR)
     }
 
     @Override

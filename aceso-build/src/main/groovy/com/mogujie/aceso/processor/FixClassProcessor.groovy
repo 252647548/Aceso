@@ -27,6 +27,8 @@ import com.mogujie.aceso.util.Log
 import com.mogujie.aceso.util.ProguardUtil
 import org.gradle.api.Project
 
+import static com.mogujie.aceso.Constant.*
+
 /**
  * The class processor for generate the hotfix file.
  *
@@ -41,19 +43,19 @@ class FixClassProcessor extends ClassProcessor {
 
     @Override
     File getMergedJar() {
-        return getFileInAceso("merged", varDirName, jarName)
+        return getFileInAceso(MERGED_DIR, varDirName, MERGED_FIX_JAR)
     }
 
     @Override
     File getOutJar() {
-        return getFileInAceso("fix", varDirName, jarName)
+        return getFileInAceso(FIX_DIR, varDirName, FIX_JAR)
     }
 
     @Override
     void process() {
         Log.i("generate the fix class..")
         File fixJar = FileUtils.initFile(getOutJar())
-        TransformTask proguardTask = GradleUtil.getProguardTask(project,varName)
+        TransformTask proguardTask = GradleUtil.getProguardTask(project, varName)
         if (proguardTask != null) {
             ProguardUtil.instance().initProguardMap(proguardTask.transform.getMappingFile())
         }

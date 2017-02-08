@@ -148,7 +148,8 @@ abstract class IntSwitch {
     void visit(GeneratorAdapter mv, Set<String> strings, String className) {
         this.classData = AcesoProguardMap.instance().getClassData(className);
         if (classData == null) {
-            throw new GradleException("can not find "+className+" , sure you aceso-mapping is right.");
+            throw new GradleException("can not find class: "+className +
+                    " , sure you aceso-mapping is right and this class not in blacklist.");
         }
         visitClassifier(mv, strings);
     }

@@ -19,15 +19,16 @@
 package com.mogujie.aceso.util
 
 import com.android.build.gradle.internal.pipeline.TransformTask
-import com.mogujie.aceso.Constant
 import org.gradle.api.Project
+
+import static com.mogujie.aceso.Constant.ACESO_DIR
+import static com.mogujie.aceso.Constant.INTERMEDIATES_DIR
 
 /**
  * A Util.
  *
  * @author wangzhi
  */
-
 public class GradleUtil {
 
     public static def getAndroidSdkPath(Project project) {
@@ -56,9 +57,9 @@ public class GradleUtil {
 
     public static File getFileInAceso(Project project, String category, String varDirName, String fileName) {
         if (FileUtils.isStringEmpty(fileName)) {
-            return FileUtils.joinFile(project.buildDir, "intermediates", Constant.ACESO_DIR_NAME, category, varDirName)
+            return FileUtils.joinFile(project.buildDir, INTERMEDIATES_DIR, ACESO_DIR, category, varDirName)
         } else {
-            return FileUtils.joinFile(project.buildDir, "intermediates", Constant.ACESO_DIR_NAME, category, varDirName, fileName)
+            return FileUtils.joinFile(project.buildDir, INTERMEDIATES_DIR, ACESO_DIR, category, varDirName, fileName)
         }
     }
 

@@ -52,7 +52,7 @@ public abstract class AcesoBasePlugin implements Plugin<Project> {
             if (!config.disable) {
 
                 if (FileUtils.isStringEmpty(config.acesoMapping)) {
-                    config.acesoMapping = new File(project.projectDir, "aceso-mapping.txt").absolutePath
+                    config.acesoMapping = new File(project.projectDir, Constant.ACESO_MAPPING).absolutePath
                 }
 
                 initBlacklist()

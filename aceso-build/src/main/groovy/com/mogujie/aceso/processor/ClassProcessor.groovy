@@ -39,19 +39,13 @@ public abstract class ClassProcessor {
 
     Extension config
 
-    String jarName
-
     ClassProcessor(Project project, def variant, Extension config) {
         this.project = project
         this.varName = variant.name.capitalize()
         this.varDirName = variant.getDirName()
         this.config = config
-        if (GradleUtil.isProguardOpen(variant)) {
-            jarName = "main.jar"
-        } else {
-            jarName = "combined.jar"
-        }
     }
+
 
     /**
      * Return the jar file which includes all classes.
