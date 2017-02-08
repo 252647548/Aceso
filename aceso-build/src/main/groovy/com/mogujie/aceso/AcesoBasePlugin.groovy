@@ -18,9 +18,9 @@
 
 package com.mogujie.aceso
 
-import com.mogujie.aceso.util.ProguardUtil
-import com.mogujie.aceso.util.Log
 import com.mogujie.aceso.util.FileUtils
+import com.mogujie.aceso.util.Log
+import com.mogujie.aceso.util.ProguardUtil
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 
@@ -98,12 +98,13 @@ public abstract class AcesoBasePlugin implements Plugin<Project> {
                     return false
                 }
 
-                if (name.endsWith("BuildConfig.class") || name ==~ MATCHER_R) {
-                    return false
+                if (ProguardUtil.instance().getProguardMap().size() > 0) {
+                    String realName = ProguardUtil.instance().getProguardMap().get(name)
+                    name = realName == null ? name : realName
                 }
 
-                if (ProguardUtil.instance().getProguardMap().size() > 0) {
-                    name = ProguardUtil.instance().getProguardMap().get(name)
+                if (name.endsWith("BuildConfig.class") || name ==~ MATCHER_R) {
+                    return false
                 }
 
                 for (String str : blackList) {

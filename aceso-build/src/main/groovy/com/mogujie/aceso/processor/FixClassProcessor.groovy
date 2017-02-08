@@ -50,14 +50,12 @@ class FixClassProcessor extends ClassProcessor {
     void process() {
         Log.i("generate the fix class..")
         File fixJar = FileUtils.initFile(getOutJar())
-        HashMap<String, String> proguardMap = null
         TransformTask proguardTask = project.tasks.findByName("transformClassesAndResourcesWithProguardFor${varName}")
         if (proguardTask != null) {
             ProguardUtil.instance().initProguardMap(proguardTask.transform.getMappingFile())
-            proguardMap = ProguardUtil.instance().getProguardMap()
         }
         ArrayList<File> classPath = new ArrayList()
         classPath.add(new File(config.modifiedJar))
-        HookWrapper.fix(project, getMergedJar(), fixJar, classPath, proguardMap, config.acesoMapping)
+        HookWrapper.fix(project, getMergedJar(), fixJar, classPath, config.acesoMapping)
     }
 }

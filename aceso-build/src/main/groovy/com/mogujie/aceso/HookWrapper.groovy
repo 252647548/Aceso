@@ -20,10 +20,10 @@ package com.mogujie.aceso
 
 import com.google.common.collect.ImmutableList
 import com.google.common.collect.Iterables
-import com.mogujie.aceso.util.GradleUtil
 import com.mogujie.aceso.traversal.ZipTraversal
-import com.mogujie.aceso.util.Log
 import com.mogujie.aceso.util.FileUtils
+import com.mogujie.aceso.util.GradleUtil
+import com.mogujie.aceso.util.Log
 import com.mogujie.instantrun.*
 import org.gradle.api.GradleException
 import org.gradle.api.Project
@@ -54,11 +54,10 @@ public class HookWrapper {
         ZipTraversal.traversal(combindJar, new ZipTraversal.Callback() {
             @Override
             void oneEntry(ZipEntry entry, byte[] bytes) {
-                Log.i("entry: " + entry)
-                if (!filter.accept(entry.getName())) {
+                if (inBlackList(entry.getName())) {
                     return;
                 }
-                Log.i("accept entry: " + entry)
+                Log.v("accept entry: " + entry)
                 zos.putNextEntry(new ZipEntry(entry.name))
                 ClassReader cr = new ClassReader(bytes);
                 TransformAccessClassNode cn = new TransformAccessClassNode()
@@ -83,7 +82,7 @@ public class HookWrapper {
             Log.i("apply instant mapping: " + acesoMapping)
             AcesoProguardMap.instance().readMapping(new File(acesoMapping))
         }
-        inject(project, inJar, outJar, classPath, null, false)
+        inject(project, inJar, outJar, classPath, false)
         AcesoProguardMap.instance().printMapping(mappingFile)
     }
 
@@ -91,10 +90,10 @@ public class HookWrapper {
      * Generate patch class base on inJar file,
      */
     public static void fix(Project project, File inJar, File outJar,
-                           ArrayList<File> classPathList, HashMap<String, String> proguardMap,
+                           ArrayList<File> classPathList,
                            String acesoMapping) {
         AcesoProguardMap.instance().readMapping(new File(acesoMapping))
-        inject(project, inJar, outJar, classPathList, proguardMap, true)
+        inject(project, inJar, outJar, classPathList, true)
     }
 
     /**
@@ -102,7 +101,7 @@ public class HookWrapper {
      * else instrument the class file.
      */
     public static void inject(Project project, File inJar, File outJar,
-                              ArrayList<File> classPath, HashMap<String, String> proguardMap,
+                              ArrayList<File> classPath,
                               boolean isHotfix) {
         ZipFile zipFile = new ZipFile(inJar)
         ArrayList<File> newClassPath = new ArrayList<>()
@@ -141,7 +140,7 @@ public class HookWrapper {
             zipFile.entries().each { entry ->
                 if (entry.name.endsWith(".class")) {
                     if (isHotfix) {
-                        fixOneEntry(zos, zipFile, entry, fixClassList, newClassPath, proguardMap)
+                        fixOneEntry(zos, zipFile, entry, fixClassList, newClassPath)
                     } else {
                         instrumentOneEntry(zos, zipFile, entry)
                     }
@@ -173,9 +172,8 @@ public class HookWrapper {
     }
 
     private static void fixOneEntry(ZipOutputStream zos, ZipFile zipFile, ZipEntry entry,
-                                    ArrayList<String> fixClassList, ArrayList<File> classPath,
-                                    HashMap<String, String> proguardMap) {
-        if (!isNewClass(entry.name, classPath, proguardMap)) {
+                                    ArrayList<String> fixClassList, ArrayList<File> classPath) {
+        if (!isNewClass(entry.name, classPath)) {
             String addEntryName = processClassInternal(IncrementalChangeVisitor.VISITOR_BUILDER, zos, zipFile, entry, true)
             if (!FileUtils.isStringEmpty(addEntryName)) {
                 fixClassList.add(entry.name)
@@ -187,7 +185,7 @@ public class HookWrapper {
     }
 
     private
-    static boolean isNewClass(String entryName, ArrayList<File> classPath, HashMap<String, String> proguardMap) {
+    static boolean isNewClass(String entryName, ArrayList<File> classPath) {
         boolean isNewClass = true
 
         if (entryName.endsWith("BuildConfig.class") || entryName ==~ AcesoBasePlugin.MATCHER_R) {
@@ -246,7 +244,6 @@ public class HookWrapper {
 
     public static boolean inBlackList(String name) {
         if (filter == null) {
-            Log.i("filter is null.")
             return false
         } else {
             return !filter.accept(name)
