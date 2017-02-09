@@ -50,7 +50,6 @@ public abstract class AbstractPatchesLoaderImpl implements PatchesLoader {
             }
             InstantFixClassMap.setAtomMap(new InstantFixClassMap.AtomMap(classIndexMap, lockMap));
         } catch (Throwable e) {
-            Log.e(TAG, "some error in instant fix");
             e.printStackTrace();
             return false;
         }
