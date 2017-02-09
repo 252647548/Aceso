@@ -6,7 +6,7 @@ import android.os.Environment;
 import android.view.View;
 import android.widget.Toast;
 
-import com.mogujie.aceso.HotPatchUtil;
+import com.mogujie.aceso.Aceso;
 
 import java.io.File;
 
@@ -26,7 +26,7 @@ public class MainActivity extends Activity {
         }
         File optFile = new File(this.getFilesDir(), "fix_opt");
         optFile.mkdirs();
-        new HotPatchUtil().fix(optFile, fixFile);
+        new Aceso().installPatch(optFile, fixFile);
     }
 
     public void test(View view) {
