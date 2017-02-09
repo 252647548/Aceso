@@ -1,5 +1,5 @@
 apply plugin: 'com.android.application'
-apply plugin: 'Aceso'
+apply plugin: 'AcesoHost'
 
 android {
     signingConfigs {
@@ -40,6 +40,6 @@ dependencies {
 }
 
 Aceso {
-    disableInstrumentDebug = false
+    instrumentDebug = true
 }
 

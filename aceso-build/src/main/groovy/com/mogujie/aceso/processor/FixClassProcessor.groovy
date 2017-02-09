@@ -60,7 +60,7 @@ class FixClassProcessor extends ClassProcessor {
             ProguardUtil.instance().initProguardMap(proguardTask.transform.getMappingFile())
         }
         ArrayList<File> classPath = new ArrayList()
-        classPath.add(new File(config.modifiedJar))
+        classPath.add(new File(config.instrumentJar))
         HookWrapper.fix(project, getMergedJar(), fixJar, classPath, config.acesoMapping)
     }
 }

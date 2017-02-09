@@ -17,6 +17,7 @@
  */
 
 package com.mogujie.aceso.util
+
 import com.google.common.base.Joiner
 import org.gradle.api.Project
 
@@ -130,10 +131,19 @@ public class FileUtils {
     }
 
     public static void copy(Project project, File src, File dstDir) {
+        copy(project, src, dstDir, null)
+    }
+
+    public static void copy(Project project, File src, File dstDir, String newName) {
         FileUtils.clearDir(dstDir)
         project.copy {
             from src
             into dstDir
+            if (newName != null) {
+                rename { String fileName ->
+                    return newName
+                }
+            }
             println "copy from ${src.absolutePath} to ${dstDir.absolutePath}"
         }
     }

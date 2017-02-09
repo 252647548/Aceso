@@ -26,22 +26,21 @@ Aceso {
     logLevel = 3
     //methodLevelFix为true时，需要在修的方法前加@FixMtd的注解
     methodLevelFix = true
-    modifiedJar = getModifiedJar()
+    instrumentJar = getInstrumentJar()
     acesoMapping = getAcesoMapping()
+    allClassesJar = getAllClassesJar()
 }
 
-def getModifiedJar() {
-    def jarName=null;
-    if (buildTypeStr().contains("debug")) {
-        jarName="combined.jar"
-    }else{
-        jarName="main.jar"
-    }
-    return project.rootProject.file("../aceso-demo/app/build/intermediates/aceso/instrument/full/${buildTypeStr()}/${jarName}").absolutePath
+def getInstrumentJar() {
+    return project.rootProject.file("../aceso-demo/app/build/intermediates/aceso/instrument/full/${buildTypeStr()}/instrument.jar").absolutePath
 }
 
 def getAcesoMapping() {
-    return project.rootProject.file("../aceso-demo/app/build/intermediates/aceso/mapping/full/${buildTypeStr()}/mapping.txt").absolutePath
+    return project.rootProject.file("../aceso-demo/app/build/intermediates/aceso/aceso-mapping//full/${buildTypeStr()}/aceso-mapping.txt").absolutePath
+}
+
+def getAllClassesJar(){
+    project.rootProject.file("../aceso-demo/app/build/intermediates/aceso/all-classes/full/${buildTypeStr()}/all-classes.jar").absolutePath
 }
 
 def buildTypeStr() {
@@ -58,17 +57,4 @@ def buildTypeStr() {
 
 dependencies {
     provided fileTree(include: ['*.jar'], dir: 'libs')
-}
-
-project.afterEvaluate {
-    File allClassesJar = null
-    if (buildTypeStr().contains("debug")) {
-        allClassesJar = project.rootProject.file("../aceso-demo/app/build/intermediates/aceso/all-classes/full/debug/combined.jar")
-    } else {
-        allClassesJar = project.rootProject.file("../aceso-demo/app/build/intermediates/aceso/all-classes/full/release/main.jar")
-    }
-    copy {
-        from allClassesJar
-        into new File(project.projectDir, "libs")
-    }
 }

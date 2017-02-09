@@ -12,6 +12,7 @@ public class Constant {
     public static final String EXPAND_DIR = "expand"
     public static final String FIX_DIR = "fix"
     public static final String INSTRUMENT_DIR = "instrument"
+    public static final String ACESO_MAPPING_DIR = "aceso-mapping"
 
     //file name
     public static final String ACESO_MAPPING = "aceso-mapping.txt"

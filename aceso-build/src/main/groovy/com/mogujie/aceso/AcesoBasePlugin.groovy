@@ -49,18 +49,13 @@ public abstract class AcesoBasePlugin implements Plugin<Project> {
         project.afterEvaluate {
             initExtensions()
             Log.logLevel = config.logLevel
-            if (!config.disable) {
-
-                if (FileUtils.isStringEmpty(config.acesoMapping)) {
-                    config.acesoMapping = new File(project.projectDir, Constant.ACESO_MAPPING).absolutePath
-                }
-
+            if (config.enable) {
+                //do some init and check
+                assignDefaultValue()
+                checkNecessaryFile()
                 initBlacklist()
-
-                if (!FileUtils.checkFile(config.acesoMapping)) {
-                    Log.w("aceso mapping not found!")
-                }
                 HookWrapper.filter = initFilter()
+
                 realApply()
             }
         }
@@ -87,13 +82,15 @@ public abstract class AcesoBasePlugin implements Plugin<Project> {
 
         if (blackListFile.exists()) {
             blackListFile.eachLine { line ->
-                blackList.add(line.trim())
+                String lineNoSpace = line.trim()
+                if (lineNoSpace.length() > 0 && !lineNoSpace.startsWith("#")) {
+                    blackList.add(lineNoSpace)
+                }
             }
         }
     }
 
     protected void addProguardKeepRule(def variant) {
-
 
         if (GradleUtil.isProguardOpen(variant)) {
             TransformTask proguardTask = GradleUtil.getProguardTask(project, variant.name.capitalize())
@@ -112,6 +109,15 @@ public abstract class AcesoBasePlugin implements Plugin<Project> {
             }
         }
 
+    }
+
+    protected void assignDefaultValue() {
+        if (FileUtils.isStringEmpty(config.acesoMapping)) {
+            config.acesoMapping = new File(project.projectDir, Constant.ACESO_MAPPING).absolutePath
+        }
+    }
+
+    protected void checkNecessaryFile() {
 
     }
 

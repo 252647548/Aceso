@@ -29,20 +29,14 @@ public class Extension {
     /*-------------Configuration for AcesoBasePlugin-------------*/
 
     /**
-     * The log level ,value range from 1-3,low to high.
+     * The log level ,value range from 0-3,low to high.
      */
     public int logLevel = 2
 
     /**
-     * Disable the plugin.
+     * Enable the plugin.
      */
-    public boolean disable = false
-
-    /**
-     *  BlackList for class
-     */
-    public String blackListPath
-
+    public boolean enable = true
 
     /**
      * The aceso mapping.
@@ -56,14 +50,25 @@ public class Extension {
     /**
      * Open the incrument in debug compile.
      */
-    public boolean disableInstrumentDebug = true
+    public boolean instrumentDebug = false
+
+    /**
+     *  BlackList for class
+     */
+    public String blackListPath
+
 
     /*-------------Configuration for AcesoFixPlugin-------------*/
 
     /**
-     * the modifiedJar's path
+     * the instrument.jar's path
      */
-    public String modifiedJar
+    public String instrumentJar
+
+    /**
+     * the all-classes.jar's path
+     */
+    public String allClassesJar
 
     /**
      * Is method level fix? If true,you need add annotation

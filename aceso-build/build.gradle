@@ -37,6 +37,6 @@ dependencies {
 upinfo {
     groupId = 'com.mogujie.gradle'
     artifactId = 'aceso'
-    version = '0.0.2.7-LOCAL'
+    version = '0.0.2.8'
 }
 

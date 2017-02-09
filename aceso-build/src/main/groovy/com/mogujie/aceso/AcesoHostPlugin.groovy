@@ -42,7 +42,7 @@ public class AcesoHostPlugin extends AcesoBasePlugin {
     public void doIt(def variant) {
         String varName = variant.name.capitalize()
         String varDirName = variant.getDirName()
-        if (config.disableInstrumentDebug && varName.toLowerCase().contains("debug")) {
+        if (!config.instrumentDebug && varName.toLowerCase().contains("debug")) {
             return;
         }
         addProguardKeepRule(variant)

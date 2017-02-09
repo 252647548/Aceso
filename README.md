@@ -15,17 +15,8 @@ Aceso是基于Instant Run Hot Swap的Android热修复方案，使用它你能在
 
 - 暂不支持static函数、构造函数的修复 
 - 暂不支持修改类结构，如修改方法签名、新增/删除方法、新增/删除字段
-- 要修的类如果是由jdk7/jdk8编译的，则fix工程编译时的环境必须是jdk7/jdk8
 
-##TODO
-- 支持构造函数的热修复
-- 支持新增方法、字段
-- 抹平jdk7/8的兼容性问题
 
-##Issues
-
-- 包大小会增加，以蘑菇街app为例，由45M增加到了46.5M   
-- 如果修的方法中有一些[特殊的调用]()，会采取反射的形式调用。
 
 ##Usage
 1.在最外层project的build.gradle中加入以下代码：
@@ -57,7 +48,7 @@ dependencies {
 
 ```
 Aceso {
-    disableInstrumentDebug = false
+    instrumentDebug = false
 }
 ```
 
