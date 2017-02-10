@@ -5,7 +5,7 @@ Aceso是基于Instant Run Hot Swap的Android热修复方案，使用它你能在
 ## Features
 
 - 支持4.x-7.x机型
-- 方案类似于aop，基本不会有兼容性问题
+- 相比业界其他方案，基本没有兼容性问题
 - 安装补丁后不用重启，实时生效
 - 支持方法级别的修复
 - 支持新增类
@@ -14,7 +14,7 @@ Aceso是基于Instant Run Hot Swap的Android热修复方案，使用它你能在
 ## Limitations
 
 - 暂不支持static函数、构造函数的修复 
-- 暂不支持修改类结构，如修改方法签名、新增/删除方法、新增/删除字段
+- 只支持修改函数体
 
 
 

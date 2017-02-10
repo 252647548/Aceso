@@ -21,6 +21,30 @@ Aceso
 | aceso-demo-fix | demo工程的Fix工程，用来生成demo工程的patch包 |
 
 
+## aceso-build模块图
+
+![](http://s16.mogucdn.com/p1/170210/idid_ifrweolcgi2dgzlgmqzdambqhayde_662x562.png)
+
+aceso-build分为两层：Gradle层和ASM层。
+
+Gradle层的作用是干涉正常编译流程，在合适的时机拿到工程的所有class文件，然后传递给ASM层进行处理。
+
+- AcesoHostPlugin: 宿主工程使用的gradle插件
+
+- AcesoFixPlugin: Fix工程使用的gradle插件
+
+- HookDexTransform: 该transform会hook掉android gradle插件中的DexTransform。将输入的class文件进行插桩处理后，再做为Dextransform的输入传入。
+
+- HookWrapper: 将transform传入的参数进行一些封装，然后调用asm层的对应方法
+
+
+ASM层的作用是利用[ASM](http://asm.ow2.org/)对class文件进行字节码处理。
+
+- IncremetSupportVisitor: 被Gradle层的AcesoHotPlugin间接调用，对类进行插桩，从而使得类能够被hotfix。  
+
+- IncremetChangeVisitor: 被Gradle层的AcesoFixPlugin间接调用，生成patch文件。
+
+
 
 ## 输出文件详解
 
