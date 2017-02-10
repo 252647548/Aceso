@@ -20,14 +20,14 @@ public class MainActivity extends Activity {
     }
 
     public void fix(View view) {
-        File fixFile = new File(Environment.getExternalStorageDirectory(), "fix.apk");
-        if (!fixFile.exists()) {
+        File patchFile = new File(Environment.getExternalStorageDirectory(), "fix.apk");
+        if (!patchFile.exists()) {
             Toast.makeText(this, "hotfix file not exist!", Toast.LENGTH_SHORT).show();
             return;
         }
-        File optFile = new File(this.getFilesDir(), "fix_opt");
-        optFile.mkdirs();
-        new Aceso().installPatch(optFile, fixFile);
+        File optDir = new File(this.getFilesDir(), "fix_opt");
+        optDir.mkdirs();
+        new Aceso().installPatch(optDir, patchFile);
     }
 
     @FixMtd

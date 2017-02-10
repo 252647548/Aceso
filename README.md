@@ -55,14 +55,14 @@ Aceso {
 3.在合适的位置加入如下代码：
 
 ```
- new Aceso().installPatch(optDir, fixFile);
+ new Aceso().installPatch(optDir, patchFile);
 ```
 
 4.每次**发布版本**时需要将module目录下的build/intermediates/aceso文件夹保存下来
  
 
 ## Generate Patch
-1.你需要创建一个额外Fix的工程（可参考aceso-demo-fix）
+1.你需要创建一个额外Fix的工程（可参考[aceso-demo-fix](aceso-demo)）
 
 2.在最外层project的build.gradle中加入以下代码：
 
@@ -95,7 +95,7 @@ Aceso {
 ```
  
 
-4.将需要修改的方法所属的类拷贝到Fix工程，并且保证包名不变。比如你需要修改的类为com.mogujie.aceso.demo.MainActivity，则你需要保证在fix工程中MainActivity的全限定名也为com.mogujie.aceso.demo.MainActivity。
+4.将需要修改的类拷贝到Fix工程，并且保证包名不变。比如你需要修改的类为com.mogujie.aceso.demo.MainActivity，则你需要保证在fix工程中MainActivity的全限定名也为com.mogujie.aceso.demo.MainActivity。
 
 5.进行你需要的修改
 
@@ -125,4 +125,4 @@ Aceso {
 
 ## License
 
-Aceso is under the Apache 2.0 license.
+Aceso is under the [Apache 2.0](LICENSE) license.
