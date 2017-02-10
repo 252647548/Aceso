@@ -6,7 +6,8 @@ import android.os.Environment;
 import android.view.View;
 import android.widget.Toast;
 import com.android.annotations.FixMtd;
-import com.mogujie.aceso.HotPatchUtil;
+
+import com.mogujie.aceso.Aceso;
 
 import java.io.File;
 
@@ -26,11 +27,11 @@ public class MainActivity extends Activity {
         }
         File optFile = new File(this.getFilesDir(), "fix_opt");
         optFile.mkdirs();
-        new HotPatchUtil().fix(optFile, fixFile);
+        new Aceso().installPatch(optFile, fixFile);
     }
 
     @FixMtd
     public void test(View view) {
-        Toast.makeText(this, "has been fixed !!!!! ", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, "has been fixed !", Toast.LENGTH_SHORT).show();
     }
 }

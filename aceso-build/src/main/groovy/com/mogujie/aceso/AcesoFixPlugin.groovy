@@ -18,7 +18,8 @@
 
 package com.mogujie.aceso
 
-import com.android.build.gradle.internal.scope.ConventionMappingHelper
+import com.android.build.gradle.internal.core.GradleVariantConfiguration
+import com.android.builder.dependency.JarDependency
 import com.mogujie.aceso.processor.ExpandScopeProcessor
 import com.mogujie.aceso.processor.FixClassProcessor
 import com.mogujie.aceso.transoform.HookDexTransform
@@ -28,9 +29,6 @@ import com.mogujie.aceso.util.GradleUtil
 import com.mogujie.aceso.util.Log
 import com.mogujie.instantrun.IncrementalTool
 import org.gradle.api.GradleException
-import org.gradle.api.file.FileCollection
-
-import java.util.concurrent.Callable
 
 /**
  * A plugin for generate patch apk.
@@ -55,7 +53,7 @@ public class AcesoFixPlugin extends AcesoBasePlugin {
         //create the aceso task
         project.tasks.create("aceso" + varName, AcesoTask, new AcesoTask.HotFixAction(varName))
         addProguardKeepRule(variant)
-        addAllClassesJarToCp(varName)
+        addAllClassesJarToCp(variant)
         if (GradleUtil.isAcesoFix(project)) {
             Log.i "the next will be aceso fix."
             HookTransform.injectTransform(project, variant, new FixClassProcessor(project, variant, config),
@@ -67,17 +65,18 @@ public class AcesoFixPlugin extends AcesoBasePlugin {
         }
     }
 
-    private void addAllClassesJarToCp(String varName) {
-        def javacTask = project.tasks.findByName("compile${varName}JavaWithJavac")
-        def classpath= javacTask.classpath.plus(project.files(config.allClassesJar))
-        ConventionMappingHelper.map(javacTask, "classpath", new Callable<FileCollection>() {
-            @Override
-            FileCollection call() throws Exception {
-
-                return classpath;
-            }
-        })
-        Log.i(javacTask.classpath)
+    private void addAllClassesJarToCp(def variant) {
+        JarDependency allClassesJarDep = new JarDependency(new File(config.allClassesJar), true, false, true, null, null)
+        GradleVariantConfiguration configuration = variant.variantData.variantConfiguration
+        Log.i("next we will add all-classes.jar to the localJars.")
+        int sizeBeforeInserting = configuration.getLocalJarDependencies().size()
+        Log.i("the size of before inserting localJars size is " + sizeBeforeInserting)
+        configuration.getLocalJarDependencies().add(allClassesJarDep)
+        int sizeAfterInserting = configuration.getLocalJarDependencies().size()
+        Log.i("the size of after inserting localJars size is " + sizeAfterInserting)
+        if (sizeAfterInserting - sizeBeforeInserting != 1) {
+            Log.e("-------insert all-classes.jar failed,you may fail at compile time.------- ")
+        }
     }
 
     protected void assignDefaultValue() {
