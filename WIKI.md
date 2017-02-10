@@ -1,17 +1,14 @@
-##为什么要使用Aceso?
+## 为什么要使用Aceso?
  
+对比图
 
 
 
-|| Aceso | QZone | Tinker | AndFix|
-|:-----:|:----:|:----:|:----:|:----:|
-| add    | √    | √    |√ |   √   |     
-| change    | √    |  √   |√ |   √   | 
-| remove   | √    |   √  |x|   -   | 
 
 
+## 工程介绍
 
-##工程介绍
+
 | 名称 | 描述 |  
 | :-----: | :----: | 
 | aceso-build | gradle插件工程，包含了AcesoHost和AcesoFix两个插件<br>AcesoHost在宿主工程中使用，用来对宿主工程的代码进行插桩<br>AcesoFix在Fix工程中使用，用来生成patch包 <br>该工程包含了Aceso的主要逻辑|
@@ -21,7 +18,8 @@
 
 
 
-##输出文件详解
+## 输出文件详解
+
 Aceso的输出目录为build/intermediates/aceso。
 
 | 名称 | 相对路径 | 描述 |  
@@ -31,7 +29,36 @@ Aceso的输出目录为build/intermediates/aceso。
 | acesoMapping | aceso-mapping/${buildType+Flavor}/aceso-mapping.txt | 记录了所有被插桩的类与方法对应的int型整数，该文件需要在宿主工程发布版本后需要保存下来 | 
 
 
-##Gradle Dsl
+## Aceso修复流程
+
+1.在每次发布版本后，需要将allClassesJar，instrumentJar，acesoMapping，保存下来。
+
+2.假如你需要修复的版本是1.0.0。如果你要发布的是1.0.0的第一个hotfix，则在Fix工程中切出一个单独的分支（假设分支名为fix_1.0.0）。否则将Fix工程切换到1.0.0版本的对应分支：fix_1.0.0。（该步骤非必需，但是强烈建议）
+
+3.将需要修复的类按对应包名拷贝到Fix工程中，做相应修改，打包。
+ 
+其实，patch包其实是可以不用创建一个额外的Fix工程，直接在宿主工程中生成的。Aceso选择新建一个额外的工程的原因有两点：
+
+- Fix工程环境干净，避免因宿主工程环境不同导致未知问题
+
+- 要修复的类一目了然，方便日后查看
+
+- 针对同一个版本，如果需要发多个hotfix，可以直接在Fix工程中的对应分支上修改，方便快捷
+
+4.将patch包下发到手机
+ 
+ 
+举个例子，在发布完1.0.0版本后，你发现A类有问题，需要修复它。
+
+这时候你需要在Fix工程中切出一个单独的分支，假设分支名为fix_1.0.0。然后将A类拷贝进去，修改bug，打出patch包，下发到手机。
+
+之后你又发现B类也需要修复。那你应该在Fix工程的fix_1.0.0的分支上把B类也拷贝进去，修改bug，打出一个新的patch包（包含A和B两个类），再下发到手机。
+（因为Aceso一次只加载一个patch包,所以你必须保证最后一个patch包包含之前patch包所有要修复的类）
+ 
+ 
+
+
+## Gradle Dsl
 
 | 参数 | 默认值 | 描述 | 使用插件 | 
 | :-----: | :----: | :----: | :----: |
@@ -43,7 +70,7 @@ Aceso的输出目录为build/intermediates/aceso。
 | instrumentJar | module根目录/instrument.jar | 输出文件详解中的instrumentJar的路径| AcesoFix | 
 | methodLevelFix | true | 是否开启方法级修复，如果为true，则只修复Fix工程中加了@FixMtd注解的方法，否则Fix工程中所有类的所有方法都会被修复。为true时，需要在被修的方法前加入@FixMtd的注解 | AcesoFix | 
 
-##blackList
+## BlackList
 可以通过Gradle Dsl中提到的blackListPath指定黑名单。黑名单中的所有类都不能被fix。
 黑名单格式如下：
 
@@ -59,14 +86,14 @@ com/mogujie/demo/Test.class
 
 你可以将第三方库的所有类加入到黑名单，以减少aceso插桩增加的包大小。
 
-##Issues
+## Issues
 
 - 包大小会增加，以蘑菇街app为例，由45M增加到了46.5M   
 - 安装后的oat文件大小会增加，以蘑菇街app为例，在5.x上安装后大小由xx -xx
 - 要修的类如果是由jdk7/jdk8编译的，则Fix工程编译时的环境必须是jdk7/jdk8
 
 
-##TODO
+## TODO
 - 支持构造函数的热修复
 - 支持新增方法、字段
 - 抹平jdk7/8的兼容性问题
