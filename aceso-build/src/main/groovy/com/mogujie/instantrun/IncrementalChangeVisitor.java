@@ -201,7 +201,6 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
             throw new RuntimeException("some error in remove new and dup ins");
         }
         for (AbstractInsnNode removeNode : removeList) {
-            Log.i("finally remove insn node :  " + removeNode.getOpcode() + "  " + removeNode.getType());
             methodNode.instructions.remove(removeNode);
         }
     }

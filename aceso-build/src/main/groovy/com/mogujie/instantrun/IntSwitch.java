@@ -37,10 +37,18 @@ import java.util.Set;
 abstract class IntSwitch {
 
     AcesoProguardMap.ClassData classData = null;
+    String className = null;
+
     final Function<String, Integer> HASH_METHOD = new Function<String, Integer>() {
         @Override
         public Integer apply(String input) {
-            return classData.getMtdIndex(input);
+            Integer mtdIndex = classData.getMtdIndex(input);
+            if (mtdIndex == null) {
+                throw new RuntimeException("the method : " + input + " in class : " + className
+                        + " not found in the aceso-mapping. \n "
+                        + "sure you aceso-mapping is right and no new method.");
+            }
+            return mtdIndex;
         }
     };
 
@@ -78,7 +86,6 @@ abstract class IntSwitch {
     private void visitClassifier(GeneratorAdapter mv, Set<String> strings) {
         visitInt();
 
-        // Group strings by hash code.
         Multimap<Integer, String> buckets = Multimaps.index(strings, HASH_METHOD);
         List<Map.Entry<Integer, Collection<String>>> sorted = Ordering.natural()
                 .onResultOf(new Function<Map.Entry<Integer, Collection<String>>, Integer>() {
@@ -146,9 +153,10 @@ abstract class IntSwitch {
     }
 
     void visit(GeneratorAdapter mv, Set<String> strings, String className) {
+        this.className = className;
         this.classData = AcesoProguardMap.instance().getClassData(className);
         if (classData == null) {
-            throw new GradleException("can not find class: "+className +
+            throw new GradleException("can not find class: " + className +
                     " , sure you aceso-mapping is right and this class not in blacklist.");
         }
         visitClassifier(mv, strings);
