@@ -21,7 +21,7 @@ Aceso是基于Instant Run Hot Swap的Android热修复方案，使用它你能在
 ## Usage
 1.在最外层project的build.gradle中加入以下代码：
 
-```groovy
+```
 buildscript {
     repositories {
         jcenter()
@@ -66,7 +66,7 @@ Aceso {
 
 2.在最外层project的build.gradle中加入以下代码：
 
-```groovy
+```
 buildscript {
     repositories {
         jcenter()
@@ -117,11 +117,12 @@ Aceso {
 
 5.点击test按钮，显示的是has been fixed !
 
-## Contributing
-
+ 
 ## Thanks
 - [Instant Run](https://developer.android.com/studio/run/index.html#instant-run)
 - [Robust](http://tech.meituan.com/android_robust.html)
 
 
 ## License
+
+Aceso is under the Apache 2.0 license.
