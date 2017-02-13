@@ -15,12 +15,12 @@
 ###1.1 Dexposed
 
 Xposed的非root版本，实现本进程的AOP, Dalvik上近乎完美，patch难写些, 但是不支持ART，现在已被AndFix取代。原理是Hook了Dalvik虚拟机的method->nativeFunc指针，如下：
-![](http://moguimg.u.qiniudn.com/new1/v1/bmisc/5209af25e692df2fbde98288b056c1cb/197537286235.png)
+![](http://s16.mogucdn.com/new1/v1/bmisc/37d10de252714bf1c492c649f519e077/197815297406.png)
 
 ###1.2 Q-Zone
 
 原理是Hook了ClassLoader.pathList.dexElements[]。因为ClassLoader的findClass是通过遍历dexElements[]中的dex来寻找类的。当然为了支持4.x的机型，需要打包的时候进行插桩。
-![](http://moguimg.u.qiniudn.com/new1/v1/bmisc/b3c0a5617ca709b458e5ca38bd3cf04d/197537500451.png)
+![](http://s17.mogucdn.com/new1/v1/bmisc/32fe4b719de23c12cdad359f8d685225/197813004960.png)
 
 ###1.3 Tinker
 
@@ -88,11 +88,17 @@ void* entry_point_from_quick_compiled_code_;
 ```
 
 如果是同一个dex内部跳转，在类首次被调用时，那么它的函数调用接口最终都走到了这个artQuickResolutionTrampoline()蹦床函数.   
-比如class A的caller()调用到了类B的callee()，A.caller()->B.callee()，dex2oat在生成A.caller()的native code时，其调用B.callee()最后就偏移到了class B所在的dexcache中callee对应的ArtMethod的entry\_point\_from\_quick\_compiled\_code\_地址。dex2oat如何知道callee对应的ArtMethod呢？因为Dex文件里面保存了callee在该Dex中的信息，包括签名和methodId，而dexcache中的ArtMethods数组就是按照这个methodId来对应到各个method的。所以, dex2oat在解析了Dex文件后根据methodId就知道到哪个ArtMethod去调用entry\_point\_from\_quick\_compiled\_code\_了。
+比如class A的caller()调用到了类B的callee()，A.caller()->B.callee()，dex2oat在生成A.caller()的native code时，其调用B.callee()最后就偏移到了class B所在的dexcache中callee对应的ArtMethod的```entry_point_from_quick_compiled_code_```地址。dex2oat如何知道callee对应的ArtMethod呢？因为Dex文件里面保存了callee在该Dex中的信息，包括签名和methodId，而dexcache中的ArtMethods数组就是按照这个methodId来对应到各个method的。所以, dex2oat在解析了Dex文件后根据methodId就知道到哪个ArtMethod去调用```entry_point_from_quick_compiled_code_```了。
 
 ![](http://moguimg.u.qiniudn.com/new1/v1/bmisc/2c08016b2d56b15768936e2273ea85a0/197544757604.png)
 
 如上图所示, 类初始化的时候，dex\_cache中所有的ArtMethod指针都是“狸猫”代理，在被调用到的时候会通过“蹦床”函数根据dex2oat生成的偏移找到对应的ArtMethod("太子")，然后回填到dex\_cache中，这样下次再被调用的时候使用的就是真正的"太子"ArtMethod，不会再调用到蹦床函数了，最后调用“太子”ArtMethod的native code。
+
+大致总结下：   
+
+1. 类被初始化的时候，resolved\_methods数组里面所有的ARTMethods都指向一个“狸猫”ArtMethod，这个ArtMethod的```entry_point_from_quick_compiled_code_```指向的是一个蹦床函数。   
+
+2. 在方法首次被调用的时候，先运行的是这个蹦床函数，在这个蹦床函数里面去查找真正的ArtMethod，然后将其填入resolved\_methods，下次运行的时候就是从“太子”ArtMethods获取```entry_point_from_quick_compiled_code_```了，这个指向OAT文件中对应该method的native code。
 
 ###2.4 Virtual-Table创建
 
@@ -135,7 +141,7 @@ invoke\_virtual和invoke\_interface指令是通过在virtual\_methods和ifTableA
 
 顺便，这里我们来看下AndFix的原理, Andfix主要实现代码如下：
 
-![](http://moguimg.u.qiniudn.com/new1/v1/bmisc/39a9d6d3918283150baf7ffabd983275/197546253388.png)
+![](http://s17.mogucdn.com/new1/v1/bmisc/5f3976e0b0cbb3d9959023a61113fb88/197814817453.png)
 
 其核心思想就是替换了dex_cache中的目标ArtMethod(dmeth)的内容，将dmeth的内容替换成为smeth的内容，包括native代码的在OAT文件的偏移，classloader等。
 
@@ -177,50 +183,15 @@ http://dwz.cn/5hajFl
 
 InstantRun在打HotFix包时，会为每个类塞入一个change变量。开发过程中，如果这个类一直没有变化，那么change一直为空。如果类发生变化，change将被塞入patch的类实例。举个例子：
 
-```
-public class HotFixActivity{
-...
-
-	public static boolean setText(Context mContext, String mString){
-		//HotFix中将下面的Log打开
-		//Log.e("HotFixActivity", "Hello World");
-		return true;
-	}
-}
-```
+![](http://s17.mogucdn.com/new1/v1/bmisc/5b01aca1a11852cb58444ed93cb80669/197814932517.png)
 
 通过ASM注入后的HotFixActivity.java
 
-```
-public class HotFixActivity{
-	public static volatile transient /* synthetic */ IncrementalChange $change;
-...
-
-	public static boolean setText(Context mContext, String mString){
-		IncrementalChange incrementalChange = $change;
-		if (incrementalChange == null){
-			return true;
-		}
-		return ((Boolean ) incrementalChange.access$dispatch(
-		"setText.(Landroid/context/Context;Ljava/lang/String;)Z",
-		new Object[]{mContext, mString})).booleanValue();
-	}
-}
-```
+![](http://s17.mogucdn.com/new1/v1/bmisc/1b2f604b0dba0eabd520f43419f6342f/197814860723.png)
 
 再看下patch的实现类:
 
-
-```
-public class HotFixActivity$override implements IncrementalChange{
-...
-
-	public static boolean setText(Context mContext, String mString){
-		Log.e("HotFixActivity", "Hello World");
-		return true;
-	}
-}
-```
+![](http://s17.mogucdn.com/new1/v1/bmisc/9b8d700a048e6a9bc8b2d4777bd77887/197814977568.png)
 
 InstantRun方案其实原理很简单，关键是填坑，为了暴露这些坑，尽量发现足够多的应用场景，我们采用暴力测试的方法，一次HotFix了900多个类，包括图片库，网络库这种比较频繁调用的库，后来又陆陆续续适配了蘑菇街其他组件，并把暴力测试的这些类灰度到线上，直到发现的坑都踩完填完为止。 另外，使用原生InstantRun方案会带来2个问题，一个是包会增大很多，蘑菇街apk从42M增加到了60M；另外一个是由于采用反射导致性能影响比较大，这对于频繁调用的方法来说就是噩梦。   
 我们通过不停优化，最后包大小只增加了1.5M，性能方面，同样暴力热修复了900多个类在线上线下并没有发现性能问题，事实上，InstantRun机制本身需要的反射被大部分优化掉后，理论上不会有性能瓶颈了。
@@ -248,71 +219,24 @@ InstantRun插桩增加的包大小解决方案
 ---
 InstantRun方案为每个类增加一个静态变量，并且会在每个函数前插桩，增加了指令数和字符串，其中，多了字符串是主要原因。
 
-```
-public class JustTest{
-	public static IncrementalChange $change;
-	
-	public void test(){
-		if($change != null) {
-			$change.access$dispatch("test()V", new Object[0]);
-		} else {
-			Log.i("Aceso", "JustTest");
-		}
-	}
-}	
-```
+![](http://s16.mogucdn.com/new1/v1/bmisc/f353a61dc23c6748aaf9934f3eb0890e/197815081039.png)
 
 为了解决字符串的问题，此处借用了Proguard的思想，在编译期间将所有的方法都映射为一个int值，然后将映射关系保存在一个mapping文件中。
 
-```
-public class JustTest{
-	public static IncrementalChange $change;
-	
-	public void test(){
-		if($change != null) {
-			$change.access$dispatch(100, new Object[0]);
-		} else {
-			Log.i("Aceso", "JustTest");
-		}
-	}
-}	
-```
+![](http://s16.mogucdn.com/new1/v1/bmisc/6323840eafdd9b8c70419080539a71a9/197815104883.png)
 
 ###3.5 为支持super.method()增加的包大小
 
 InstantRun是在一个叫override类去调用被修类的各种方法。但遇到如super.method的情况，它是处理不了的，因为没有办法调用另外一个对象的super.xxx。
 为了解决这个问题，InstantRun在原类中增加一个超大的代理函数。这个函数中有一个switch，switch的每个case对应了一个父类方法，也就是说这个类的父类有多少个方法，那么这个switch就有多少个case。然后根据传入的参数来决定要调用父类的哪个方法。
 
-```
-	public void test(){
-		super.toString();
-	}
-```
+![](http://s17.mogucdn.com/new1/v1/bmisc/46f8f3e0568f9b2253031ebde64e7168/197812876767.png)
 
-```
-public static java.lang.Object access$super(JustTest justTest, String mtdSig, Object...){
-	switch (mtdSig.hashCode()){
-		case 11111:
-			return super.toString();
-		case 22222:
-			return super.hashCode();
-		case 33333:
-			return super.finalize();
-		...
-	}
-}
-```
+![](http://s17.mogucdn.com/new1/v1/bmisc/298d26cc6e017713d7ccc35fcf11deda/197812907887.png)
 
 我们借鉴了Robust的方案，将需要调用super.method()的地方通过字节码处理工具将作用对象换为原对象，并且将override的父类改为被HotFix类的父类，就能够调用原有对象的super方法。例如 假设JustTest类的父类是activity，那在override类也要继承activity，并且将调用super.toString的地方，将作用对象换为JustTest的实例。这里的justTest.super()是伪代码，代表了它字节码层面是这个含义。
 
-```
-public class JustTest$override extends Activity implements IncrementalChange {
-	public static void test(JustTest justTest){
-		justTest.super().toString();
-	}
-}
-```
-
+![](http://s17.mogucdn.com/new1/v1/bmisc/0c32f7c80c55e9a85e8e46ba285b6abf/197815131250.png)
 
 ###3.6 为兼容super(), this()增加的包大小
 
@@ -336,8 +260,9 @@ InstantRun为了在override类中调用原有类的super()方法和 this()方法
 
 InstantRun原有机制是可能导致被HotFix类提前加载到虚拟机中的，这会导致一些问题（比如说一个类的静态方法中有用到mgapplicatiion类的sApp这个静态变量，如果我们加载HotFix的时候，sApp还没赋值，那就会NPE）。
 
+![](http://s17.mogucdn.com/new1/v1/bmisc/e0f871e1e1816907398c15fd43d09a97/197815172788.png)
 
-###3.8 性能问题
+###3.10 性能问题
 
 因为要在override类的对象中去访问原有类的属性，所以必定会涉及到访问权限问题。
 InstantRun会在编译期间将：
