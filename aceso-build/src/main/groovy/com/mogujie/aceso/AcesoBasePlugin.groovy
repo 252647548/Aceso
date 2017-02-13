@@ -40,6 +40,7 @@ public abstract class AcesoBasePlugin implements Plugin<Project> {
     Project project
     Extension config
     List<String> blackList
+    List<String> whiteList
 
     @Override
     void apply(Project project) {
@@ -72,6 +73,7 @@ public abstract class AcesoBasePlugin implements Plugin<Project> {
     protected void initBlacklist() {
         File blackListFile;
         blackList = new ArrayList<>()
+        whiteList = new ArrayList<>()
         blackList.add("com/android/tools/fd/runtime")
         if (FileUtils.isStringEmpty(config.blackListPath)) {
             blackListFile = new File(project.projectDir, 'aceso-blacklist.txt')
@@ -84,7 +86,11 @@ public abstract class AcesoBasePlugin implements Plugin<Project> {
             blackListFile.eachLine { line ->
                 String lineNoSpace = line.trim()
                 if (lineNoSpace.length() > 0 && !lineNoSpace.startsWith("#")) {
-                    blackList.add(lineNoSpace)
+                    if (lineNoSpace.startsWith("!")) {
+                        whiteList.add(lineNoSpace.substring(1, lineNoSpace.length()))
+                    } else {
+                        blackList.add(lineNoSpace)
+                    }
                 }
             }
         }
@@ -137,6 +143,12 @@ public abstract class AcesoBasePlugin implements Plugin<Project> {
 
                 if (name.endsWith("BuildConfig.class") || name ==~ MATCHER_R) {
                     return false
+                }
+
+                for (String str : whiteList) {
+                    if (name.startsWith(str)) {
+                        return true
+                    }
                 }
 
                 for (String str : blackList) {
