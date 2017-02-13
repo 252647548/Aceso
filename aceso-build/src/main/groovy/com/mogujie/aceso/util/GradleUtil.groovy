@@ -18,14 +18,20 @@
 
 package com.mogujie.aceso.util
 
+import com.android.SdkConstants
 import com.android.build.gradle.internal.pipeline.TransformTask
+import com.android.build.gradle.internal.transforms.JarMerger
 import org.gradle.api.Project
+
+import java.lang.reflect.InvocationHandler
+import java.lang.reflect.Method
+import java.lang.reflect.Proxy
 
 import static com.mogujie.aceso.Constant.ACESO_DIR
 import static com.mogujie.aceso.Constant.INTERMEDIATES_DIR
 
 /**
- * A Util.
+ * A util for gradle.
  *
  * @author wangzhi
  */
@@ -60,6 +66,36 @@ public class GradleUtil {
             return FileUtils.joinFile(project.buildDir, INTERMEDIATES_DIR, ACESO_DIR, category, varDirName)
         } else {
             return FileUtils.joinFile(project.buildDir, INTERMEDIATES_DIR, ACESO_DIR, category, varDirName, fileName)
+        }
+    }
+
+    public static JarMerger getClassJarMerger(File jarFile) {
+        JarMerger jarMerger = new JarMerger(jarFile)
+
+        Class<?> zipEntryFilterClazz
+        try {
+            zipEntryFilterClazz = Class.forName("com.android.builder.packaging.ZipEntryFilter")
+        } catch (Throwable t) {
+            zipEntryFilterClazz = Class.forName("com.android.builder.signing.SignedJarBuilder\$IZipEntryFilter")
+        }
+
+        Class<?>[] classArr = new Class[1];
+        classArr[0] = zipEntryFilterClazz
+        InvocationHandler handler = new FilterInvocationHandler();
+        Object proxy = Proxy.newProxyInstance(zipEntryFilterClazz.getClassLoader(), classArr, handler);
+
+        jarMerger.setFilter(proxy);
+
+        return jarMerger
+
+    }
+
+    public static class FilterInvocationHandler implements InvocationHandler {
+
+        public Object invoke(Object proxy, Method method, Object[] args)
+                throws Throwable {
+            println "args" + args
+            return args[0].endsWith(SdkConstants.DOT_CLASS);
         }
     }
 

@@ -18,16 +18,14 @@
 
 package com.mogujie.aceso.transoform
 
-import com.android.SdkConstants
 import com.android.build.api.transform.*
 import com.android.build.gradle.internal.transforms.JarMerger
 import com.android.build.gradle.internal.transforms.ProGuardTransform
-import com.android.builder.signing.SignedJarBuilder
 import com.google.common.collect.Lists
 import com.mogujie.aceso.processor.ClassProcessor
+import com.mogujie.aceso.util.GradleUtil
 import com.mogujie.aceso.util.Log
 import org.gradle.api.Project
-
 /**
  * This class hook the real proguard transform,
  * and process the class file.
@@ -56,14 +54,7 @@ public class HookProguardTransform extends HookTransform {
         //init dir
         processor.prepare()
 
-        JarMerger jarMerger = new JarMerger(processor.getMergedJar())
-        jarMerger.setFilter(new SignedJarBuilder.IZipEntryFilter() {
-            @Override
-            public boolean checkEntry(String archivePath)
-                    throws SignedJarBuilder.IZipEntryFilter.ZipAbortException {
-                return archivePath.endsWith(SdkConstants.DOT_CLASS);
-            }
-        });
+        JarMerger jarMerger = GradleUtil.getClassJarMerger(processor.getMergedJar())
 
         jarInputs.each { jar ->
             Log.i("add jar " + jar.getFile())

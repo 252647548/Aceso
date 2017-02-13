@@ -7,7 +7,7 @@ buildscript {
     dependencies {
         classpath 'com.mogujie.gradle:upaar:1.5.6'
         classpath 'com.android.tools.build:gradle:2.0.0'
-        classpath 'com.mogujie.gradle:aceso:0.0.2.9'
+        classpath 'com.mogujie.gradle:aceso:0.0.4'
     }
 }
 

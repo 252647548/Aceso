@@ -24,7 +24,9 @@ import org.gradle.api.Project
 import java.security.MessageDigest
 
 /**
- * Created by wangzhi on 16/3/10.
+ * A file utils.
+ *
+ * @author wangzhi
  */
 public class FileUtils {
 
