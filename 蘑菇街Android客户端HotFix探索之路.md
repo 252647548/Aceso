@@ -12,23 +12,23 @@
 
 ![](http://s17.mogucdn.com/new1/v1/bmisc/a7f74ecf5b7a1d2f34f6c45603e8bebf/197792399230.png)
 
-###1.1 Dexposed
+### 1.1 Dexposed
 
 Xposed的非root版本，实现本进程的AOP, Dalvik上近乎完美，patch难写些, 但是不支持ART，现在已被AndFix取代。原理是Hook了Dalvik虚拟机的method->nativeFunc指针，如下：
 ![](http://s16.mogucdn.com/new1/v1/bmisc/37d10de252714bf1c492c649f519e077/197815297406.png)
 
-###1.2 Q-Zone
+### 1.2 Q-Zone
 
 原理是Hook了ClassLoader.pathList.dexElements[]。因为ClassLoader的findClass是通过遍历dexElements[]中的dex来寻找类的。当然为了支持4.x的机型，需要打包的时候进行插桩。
 ![](http://s17.mogucdn.com/new1/v1/bmisc/32fe4b719de23c12cdad359f8d685225/197813004960.png)
 
-###1.3 Tinker
+### 1.3 Tinker
 
 服务端做dex差量，将差量包下发到客户端，在ART模式的机型上本地跟原apk中的classes.dex做merge，merge成为一个新的merge.dex后将merge.dex插入pathClassLoader的dexElement，原理类同Q-Zone，为了实现差量包的最小化，Tinker自研了DexDiff/DexMerge算法。Tinker还支持资源和So包的更新，原理类同InstantRun，这里不详解。
 
 ![](http://moguimg.u.qiniudn.com/new1/v1/bmisc/953ebad00001447dd9d8e8936e04eb63/197539013666.png)
 
-###1.4 Robust
+### 1.4 Robust
 
 美团即将开源的Robust方案是个好东西，他是在AOSP的InstantRun方案的基础上进行的极致优化，由于是基于.class级别的AOP方式，兼容性相比其他方案天然有很大的优势，而且下载即生效也是个优势，美中不足的是对包大小和磁盘占用（Android 5.x上OAT文件会比较大）仍然有影响，虽然相比InstantRun方案已经有了很大的优化。
 
@@ -36,11 +36,11 @@ Xposed的非root版本，实现本进程的AOP, Dalvik上近乎完美，patch难
 
 ![](http://s16.mogucdn.com/new1/v1/bmisc/0ce3a221716c1131107e267b358c5a64/197539758467.png)
 
-###1.5 AndFix
+### 1.5 AndFix
 
 其原理是替换了dex_cache中的目标ArtMethod，但是由于Android 7.0的Inline的优化，导致AndFix不能支持Android 7.0，阿里那边是采用的动态部署进行Android 7.0上的HotFix的。AndFix的原理后面会继续分析。
 
-###1.6 Amigo
+### 1.6 Amigo
 
 Amigo的基本原理是直接下发新的Dex，资源，so包到客户端，然后开启一个新的ClassLoader加载新的Dex，开启一个新的AssetManager加载新的Resources，可谓暴力而简单。缺点是流量跟磁盘占用比较大，下发一次HotFix相当于安装了两遍APK。
 
@@ -60,12 +60,12 @@ Amigo的基本原理是直接下发新的Dex，资源，so包到客户端，然�
 
 这样，只要限定死不修改类结构，即只修改函数体，那么理论上Q-Zone方案是不会有问题的。
 
-###2.1 Method调用类型
+### 2.1 Method调用类型
 
 为了确认Q-Zone方案在ART上的可靠性，我们研究了所有类型Method的调用方式，如下：
 ![](http://s16.mogucdn.com/new1/v1/bmisc/9b79cfb92f1341f9d58ab43c4bd36e12/197543305865.png)
 
-###2.2 Art运行时的主要数据结构
+### 2.2 Art运行时的主要数据结构
 
 以下是Art Runtime Native的主要数据结构。
 ![](http://s16.mogucdn.com/new1/v1/bmisc/0cafcc309fdc970c0caf35eac06009e8/197543434434.png)
@@ -73,7 +73,7 @@ Amigo的基本原理是直接下发新的Dex，资源，so包到客户端，然�
 每个Dex都对应一个DexFile/DexCache。
 每一个类都对应有一个class结构，包含加载的ClassLoader，一张IfTable即Interface-table，vTable即virtual-table，该class所有的Field和method分别保存在ArtField/ArtMethod中。
 
-###2.3 method调用过程（狸猫换太子）
+### 2.3 method调用过程（狸猫换太子）
 
 一个dexfile中的类如果从来没有被加载过，那么defineClass会为这个dexFile创建一个DexCache，这个DexCache包含一个指针数组resolved_methods_，数组的大小就是当前dexFile中所有的method方法数:
 
@@ -100,7 +100,7 @@ void* entry_point_from_quick_compiled_code_;
 
 2. 在方法首次被调用的时候，先运行的是这个蹦床函数，在这个蹦床函数里面去查找真正的ArtMethod，然后将其填入resolved\_methods，下次运行的时候就是从“太子”ArtMethods获取```entry_point_from_quick_compiled_code_```了，这个指向OAT文件中对应该method的native code。
 
-###2.4 Virtual-Table创建
+### 2.4 Virtual-Table创建
 
 invoke\_direct, invoke\_static, invoke\_super都是在direct_methods中查找到对应的ArtMethod的。
 
@@ -115,29 +115,29 @@ invoke\_virtual和invoke\_interface指令是通过在virtual\_methods和ifTableA
 4. 将剩下的public方法的ARTMethods append到virtual table后面   
 5. 赋予每个Virtual table中的ArtMethod一个method_id，用来标记在vitual Table中的偏移
 
-###2.5 IfTable创建
+### 2.5 IfTable创建
 
 跟virtual table的创建类似，所不同的是不仅仅IfTable相同的需要覆盖，有相同签名的ArtMethod也需要覆盖。如下：
 
 ![](http://moguimg.u.qiniudn.com/new1/v1/bmisc/0cb30f2b62f7b5df17965de6df044b1b/197545817296.png)
 
-###2.6 Filed访问
+### 2.6 Filed访问
 
 1. Constant变量，在编译为.class的时候就会被优化为常量。
 2. Instant和static变量，dex2oat会以其在类中的偏移来访问。
 
-###2.7 跨Dex访问
+### 2.7 跨Dex访问
 
 以上总结的都是同一个Dex中的访问方式。对于跨Dex的访问，Method和Field都是通过签名来访问的。
 
-###2.8 总结
+### 2.8 总结
 
 采用Q-Zone方案，即将HotFix的dex插到PathClassLoader的前面。限制HotFix不能修改类结构，即只能修改函数体的情况下：
 
 1. Dalvik模式:采用解释执行，即通过方法签名和field名字来查找，理论上能够支持。唯有Const变量不能修改。
 2. ART模式：从原dex访问HotFix中的方法和field，函数和field将会根据类的偏移来访问，由于类结构没变化，理论上支持；从HotFix访问原dex，将采用的是跨dex的解释模式访问，理论上支持。
 
-###2.9 AndFix原理
+### 2.9 AndFix原理
 
 顺便，这里我们来看下AndFix的原理, Andfix主要实现代码如下：
 
@@ -154,7 +154,7 @@ invoke\_virtual和invoke\_interface指令是通过在virtual\_methods和ifTableA
 3. 蘑菇街HotFix-Aceso篇
 ---
 
-###3.1 Aceso方案诞生背景
+### 3.1 Aceso方案诞生背景
 
 Q-Zone方案在蘑菇街平台上良好运行了半年左右，一切的改变发生在Android N的问世，由于Android N采用的是JIT+AOT profile的混合编译方式，Tinker跟Q-Zone方案跪了，Google为了解决ART上首次安装APK就做OAT带来的性能和IO占用的问题，采用了混合编译的折中方案，在APK首次运行时采用解释模式，然后运行期去收集”热代码“，通过JobScheduler对“热代码”做OAT，同时生成一个叫做Base.art的索引文件，里面保存了已经编译好的”热代码“在OAT中的索引，在应用启动的时候预先加载这些“热点类”到ClassLoader的dexcache缓存中，由于提前将这些类加载到了cache中，这样会导致这些“热点类”的方法永远没办法被替换。下图从Tinker那边拷贝过来的，AndroidN混合编译就像一个小的生态：
 
@@ -179,7 +179,7 @@ http://dwz.cn/5hajFl
  
 ![](http://moguimg.u.qiniudn.com/new1/v1/bmisc/c3009d018d3d8df0f56e205cbc7679d3/195365402460.png)
 
-###3.2 原生InstantRun方案的基本原理
+### 3.2 原生InstantRun方案的基本原理
 
 InstantRun在打HotFix包时，会为每个类塞入一个change变量。开发过程中，如果这个类一直没有变化，那么change一直为空。如果类发生变化，change将被塞入patch的类实例。举个例子：
 
@@ -196,14 +196,14 @@ InstantRun在打HotFix包时，会为每个类塞入一个change变量。开发�
 InstantRun方案其实原理很简单，关键是填坑，为了暴露这些坑，尽量发现足够多的应用场景，我们采用暴力测试的方法，一次HotFix了900多个类，包括图片库，网络库这种比较频繁调用的库，后来又陆陆续续适配了蘑菇街其他组件，并把暴力测试的这些类灰度到线上，直到发现的坑都踩完填完为止。 另外，使用原生InstantRun方案会带来2个问题，一个是包会增大很多，蘑菇街apk从42M增加到了60M；另外一个是由于采用反射导致性能影响比较大，这对于频繁调用的方法来说就是噩梦。   
 我们通过不停优化，最后包大小只增加了1.5M，性能方面，同样暴力热修复了900多个类在线上线下并没有发现性能问题，事实上，InstantRun机制本身需要的反射被大部分优化掉后，理论上不会有性能瓶颈了。
 
-###3.3 Aceso的结果
+### 3.3 Aceso的结果
 
 1. 本地暴力测试(修复1500+类,覆盖4.x-7.x机型)，
 2. Testin和Monkey通过，线上灰度3w用户（暴力修复900+常用类),蘑菇街线上发了20多个HotFix，没看到问题。
 3. 包大小增加1.5M，线上线下未发现性能问题。
 
 
-###3.4 原生InstantRun方案的那些坑
+### 3.4 原生InstantRun方案的那些坑
 
 首先是包大小问题，主要包括三个方面
 
@@ -225,7 +225,7 @@ InstantRun方案为每个类增加一个静态变量，并且会在每个函数�
 
 ![](http://s16.mogucdn.com/new1/v1/bmisc/6323840eafdd9b8c70419080539a71a9/197815104883.png)
 
-###3.5 为支持super.method()增加的包大小
+### 3.5 为支持super.method()增加的包大小
 
 InstantRun是在一个叫override类去调用被修类的各种方法。但遇到如super.method的情况，它是处理不了的，因为没有办法调用另外一个对象的super.xxx。
 为了解决这个问题，InstantRun在原类中增加一个超大的代理函数。这个函数中有一个switch，switch的每个case对应了一个父类方法，也就是说这个类的父类有多少个方法，那么这个switch就有多少个case。然后根据传入的参数来决定要调用父类的哪个方法。
@@ -238,7 +238,7 @@ InstantRun是在一个叫override类去调用被修类的各种方法。但遇�
 
 ![](http://s17.mogucdn.com/new1/v1/bmisc/0c32f7c80c55e9a85e8e46ba285b6abf/197815131250.png)
 
-###3.6 为兼容super(), this()增加的包大小
+### 3.6 为兼容super(), this()增加的包大小
 
 InstantRun为了在override类中调用原有类的super()方法和 this()方法，会在每个类中增加一个构造方法。然后在override类中会生成两个方法args 和bodys ，arg返回一个字符串，代表要调用哪个this或super方法，body中则是原来构造函数中的除this或super调用的其他逻辑。当一个类的构造方法被HotFix时，在它的构造方法中会先调用override类的args，将args返回的字符串传递给新生成的构造方法，在新生成的构造方法里会根据字符串决定要调用哪个函数。之后再调用body方法。
 
@@ -246,7 +246,7 @@ InstantRun为了在override类中调用原有类的super()方法和 this()方法
 
 为了兼容this调用，InstantRun会让每个类额外的增加一个构造方法。我们最后选择放弃对构造函数的支持，因为使用InstantRun的增加一个构造函数的方案会使得包大小额外增加1m，另外最重要的构造函数被修的概率很低，咨询了下负责发HotFix的同学，以前从来没有修过构造函数。所以权衡之下，我们决定放弃对构造函数的支持。
 
-###3.8 HotFix粒度
+### 3.8 HotFix粒度
 
 我们将HotFix的粒度从class级别降为了method级别，并要求写HotFix的同学在写HotFix代码时，在需要修复的method方法上申明一个annotation。
 
@@ -256,13 +256,13 @@ InstantRun为了在override类中调用原有类的super()方法和 this()方法
 2. 减少HotFix带来的性能消耗,
 3. 减少即时生效时的时间窗口大小。
 
-###3.9 HotFix类的按需加载问题
+### 3.9 HotFix类的按需加载问题
 
 InstantRun原有机制是可能导致被HotFix类提前加载到虚拟机中的，这会导致一些问题（比如说一个类的静态方法中有用到mgapplicatiion类的sApp这个静态变量，如果我们加载HotFix的时候，sApp还没赋值，那就会NPE）。
 
 ![](http://s17.mogucdn.com/new1/v1/bmisc/e0f871e1e1816907398c15fd43d09a97/197815172788.png)
 
-###3.10 性能问题
+### 3.10 性能问题
 
 因为要在override类的对象中去访问原有类的属性，所以必定会涉及到访问权限问题。
 InstantRun会在编译期间将：
