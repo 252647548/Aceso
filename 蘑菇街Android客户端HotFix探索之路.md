@@ -3,7 +3,7 @@
 
 在Dalvik时代，只有Dexposed跟Q-Zone两家的方案，进入ART时代后各种Android热修复方案如雨后春笋般冒出来。
 
-![](http://s16.mogucdn.com/new1/v1/bmisc/f5f646d2572cb88df1088f18beed89ca/197777894792.png)
+![](http://s17.mogucdn.com/new1/v1/bmisc/a7f74ecf5b7a1d2f34f6c45603e8bebf/197792399230.png)
 
 ###Dexposed
 
