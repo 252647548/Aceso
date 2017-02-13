@@ -67,7 +67,7 @@ public abstract class HookTransform extends Transform {
     }
 
     /**
-     * Replace specified task 's transform with HookDexTransform
+     * Replace specified task 's transform with HookTransform
      */
 
     public static void injectTransform(Project project,

@@ -36,7 +36,7 @@ android {
 
 dependencies {
     compile fileTree(include: ['*.jar'], dir: 'libs')
-    compile 'com.mogujie:aceso-android-lib:0.0.1-LOCAL'
+    compile 'com.mogujie.aceso:aceso-android-lib:0.0.1'
 }
 
 Aceso {

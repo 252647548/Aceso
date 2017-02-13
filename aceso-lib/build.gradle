@@ -1,20 +1,21 @@
 buildscript {
     repositories {
-        mavenLocal()
         jcenter()
-        maven { url 'http://maven.mogujie.org/nexus/content/groups/mitpublic/' }
     }
+
     dependencies {
-        classpath 'com.mogujie.gradle:upaar:1.5.6'
         classpath 'com.android.tools.build:gradle:2.0.0'
+        classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.7.1'
+        classpath 'com.github.dcendents:android-maven-gradle-plugin:1.3'
     }
 }
 
 allprojects {
     repositories {
-        mavenLocal()
-        maven { url 'http://maven.mogujie.org/nexus/content/groups/mitpublic/' }
         jcenter()
-        mavenCentral()
     }
 }
+
+
+
+

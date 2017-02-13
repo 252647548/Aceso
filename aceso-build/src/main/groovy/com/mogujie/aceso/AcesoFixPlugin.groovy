@@ -58,11 +58,11 @@ public class AcesoFixPlugin extends AcesoBasePlugin {
         addProguardKeepRule(variant)
         addAllClassesJarToCp(variant)
         if (GradleUtil.isAcesoFix(project)) {
-            Log.i "the next will be aceso fix."
+            Log.i "next will be aceso fix."
             HookTransform.injectTransform(project, variant, new FixClassProcessor(project, variant, config),
                     HookDexTransform.BUILDER)
         } else {
-            Log.i "the next will expand scope."
+            Log.i "next will expand scope."
             HookTransform.injectTransform(project, variant, new ExpandScopeProcessor(project, variant, config)
                     , HookDexTransform.BUILDER)
         }

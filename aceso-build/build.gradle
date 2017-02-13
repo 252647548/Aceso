@@ -1,28 +1,24 @@
 buildscript {
     repositories {
-        mavenLocal()
         jcenter()
-        maven { url 'http://maven.mogujie.org/nexus/content/groups/mitpublic/' }
     }
+
     dependencies {
-        classpath 'com.mogujie.gradle:upaar:1.5.6'
         classpath 'com.android.tools.build:gradle:2.0.0'
+        classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.2'
     }
 }
 
+
 allprojects {
     repositories {
-        mavenLocal()
-        maven { url 'http://maven.mogujie.org/nexus/content/groups/mitpublic/' }
         jcenter()
-        mavenCentral()
     }
 }
 
 
 apply plugin: 'groovy'
-apply plugin: 'maven'
-apply plugin: 'upaar'
+apply from: 'bintray.gradle'
 
 
 dependencies {
@@ -30,13 +26,6 @@ dependencies {
     compile gradleApi()
     compile localGroovy()
     compile 'com.android.tools.build:gradle:2.0.0'
-//    compile 'com.mogujie.base:groovy:1.0.0.9'
 }
 
-
-upinfo {
-    groupId = 'com.mogujie.gradle'
-    artifactId = 'aceso'
-    version = '0.0.4.1'
-}
 
