@@ -1,25 +1,23 @@
 ## Aceso
 
-Aceso是基于Instant Run Hot Swap的Android热修复方案，使用它你能在不用重新发布版本的情况下对线上app的bug进行修复。
+Aceso is a Android HotFix by optimizing the AOSP's "InstantRun HotSwap" solution, it is used to fix online bugs without a new APK publish.
 
 ## Features
 
-- 支持4.x-7.x机型
-- 相比业界其他方案，基本没有兼容性问题
-- 安装补丁后不用重启，实时生效
-- 支持方法级别的修复
-- 支持新增类
-
+- Support 4.x to 7.0 Android OS
+- Perfect compatibility 
+- Taking effect immediately after download without reboot
+- Support fixing at method level
+- Support adding new classes
 
 ## Limitations
 
-- 暂不支持static函数、构造函数的修复 
-- 只支持修改函数体
-
+- Current not support fixing static function and constructors.
+- Only the Method's body can be fixed.
 
 
 ## Usage
-1.在最外层project的build.gradle中加入以下代码：
+1.Add below codes in the outest project's build.gradle file
 
 ```
 buildscript {
@@ -28,23 +26,23 @@ buildscript {
     }
 
     dependencies {
-         classpath 'com.mogujie.aceso:aceso-build:0.0.1'
+         classpath 'com.mogujie.gradle:aceso:0.0.2.7-LOCAL'
     }
 }
 ```
 
-2.在module的build.gradle中加入以下代码：
+2.Add below codes in the module's build.gradle
 
 ```
 apply plugin: 'Aceso'
 
 dependencies {
-    compile 'com.mogujie.aceso:aceso-android-lib:0.0.1'
+    compile 'com.mogujie:aceso-android-lib:0.0.1-LOCAL'
 }
 
 ```
 
-如果你要在debug版本中使用aceso,需要再加入如下代码：
+Add below codes once you need aceso for Debug version.
 
 ```
 Aceso {
@@ -52,19 +50,17 @@ Aceso {
 }
 ```
 
-3.在合适的位置加入如下代码：
+3.Add below codes at the place after HotFix downloaded and Application's onAttachedBaseContext() or onCreate() 
 
 ```
  new Aceso().installPatch(optDir, patchFile);
 ```
-
-4.每次**发布版本**时需要将module目录下的build/intermediates/aceso文件夹保存下来
+4.Pls. reserve the file folder "build/intermediates/aceso" under module directory at each HotFix publishment.
  
-
 ## Generate Patch
-1.你需要创建一个额外Fix的工程（可参考[aceso-demo-fix](aceso-demo)）
+1.An additional Fix project is needed(pls. refer to [aceso-demo-fix](aceso-demo))
 
-2.在最外层project的build.gradle中加入以下代码：
+2.Pls. add below codes in the outest prject's build.gradle:
 
 ```
 buildscript {
@@ -73,49 +69,47 @@ buildscript {
     }
 
     dependencies {
-         classpath 'com.mogujie.aceso:aceso-build:0.0.1'
+         classpath 'com.mogujie.gradle:aceso:0.0.2.7-LOCAL'
     }
 }
 ```
 
-3.在module的build.gradle中加入以下代码：
+3.Pls. add below codes in the module's build.gradle：
 
 ```
 apply plugin: 'AcesoFix'
 
 Aceso {
-    //methodLevelFix为true时，是方法级的fix，也就是只对特定的方法进行修复，需要在修的方法前加@FixMtd的注解。否则是对整个类的所有方法进行修复。
+    // The HotFix is for method level once methodLevelFix set to true, i.e., only fix the designated method, the annotation @FixMtd should be added above the method to be fixed. Once set to false, the HotFix is for class level. 
     methodLevelFix = true
-    //下面文件都在Usage第4步提到的aceso文件夹中，各个文件的作用请参考wiki
-    instrumentJar = ‘宿主工程生成的instrument.jar的路径’
-    allClassesJar = ‘宿主工程生成的all-classes.jar的路径’
-    acesoMapping = ‘宿主工程生成的aceso-mapping.txt的路径’
+    // Below files are those aceso file folders whch mentioned in 4th step of Usage, pls. refer to the file usage in the wiki.
+    instrumentJar = ‘The path of instrument.jar which generated in host project’
+    allClassesJar = ‘The path of all-classes.jar which generated in host project’
+    acesoMapping = ‘The path of aceso-mapping.txt which generated in host project’
     }
 
 ```
  
+4.Pls copy the class to be fixed to Fix project, and reserve the package name, e.g., the class to be fixed named 'com.mogujie.aceso.demo.MainActivity', the MainActivity in fix project should reserve the package name as 'com.mogujie.aceso.demo.MainActivity'.
 
-4.将需要修改的类拷贝到Fix工程，并且保证包名不变。比如你需要修改的类为com.mogujie.aceso.demo.MainActivity，则你需要保证在fix工程中MainActivity的全限定名也为com.mogujie.aceso.demo.MainActivity。
+5.Fix you bug in Fix project.
 
-5.进行你需要的修改
+6.Pls. add @FixMtd above the method to be fixed once methodLevelFix is set.
 
-6.如果你将methodLevelFix设置为true，则需要对你修改的方法前加入@FixMtd的注解(com.android.annotations.FixMtd)
+7.Execute command 'gradle acesoRelease(or acesoDebug)' to generate the patch package, the patch would be generated under directory build/outputs/apk
 
-7.执行gradle/.gradlew acesoRelease(或acesoDebug)命令生成对应的补丁包。补丁包在/build/outputs/apk目录下
-
-8.将补丁包下发到手机。
-
+8.Deploy the patch to the target phones.
 
 ## Demo
-1.编译并安装aceso-demo，点击test按钮，显示的是not fix! 
+1.Compile and install aceso-demo, press the test button, the 'not fix' would be displayed
 
-2.在aceso-demo-fix中执行gradle/.gradlew acesoRelease(或acesoDebug)
+2.Execute command 'gradle acesoRelease(or acesoDebug) in project 'aceso-demo-fix'
 
-3.将产生的apk包push到手机端的/sdcard/fix.apk
+3.Use 'adb push' command to push the apk generated to path '/sdcard/fix.apk'
 
-4.在手机上点击fix按钮
+4.press fix button on the phone
 
-5.点击test按钮，显示的是has been fixed !
+5.Press test button, the 'has been fixed' would be displayed!
 
  
 ## Thanks
