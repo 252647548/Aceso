@@ -23,12 +23,11 @@ import com.android.build.api.transform.Transform
 import com.android.build.gradle.internal.pipeline.TransformTask
 import com.mogujie.aceso.processor.ClassProcessor
 import com.mogujie.aceso.util.Log
+import com.mogujie.aceso.util.ReflectUtils
 import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.execution.TaskExecutionGraph
 import org.gradle.api.execution.TaskExecutionGraphListener
-
-import java.lang.reflect.Field
 
 /**
  * Created by wangzhi on 17/2/8.
@@ -79,11 +78,9 @@ public abstract class HookTransform extends Transform {
                             && task instanceof TransformTask
                             && task.name.toLowerCase().contains(variant.name.toLowerCase())) {
                         if (builder.isExactTransform(((TransformTask) task).getTransform())) {
-                                Log.w("find transform. class: " + task.transform.getClass() + ". task name: " + task.name)
-                                HookTransform hookTransform = builder.build(project, variant, task.transform, processor)
-                                Field field = TransformTask.class.getDeclaredField("transform")
-                                field.setAccessible(true)
-                                field.set(task, hookTransform)
+                            Log.w("find transform. class: " + task.transform.getClass() + ". task name: " + task.name)
+                            HookTransform hookTransform = builder.build(project, variant, task.transform, processor)
+                            ReflectUtils.setField(task, hookTransform, "transform")
                             break;
                         }
                     }

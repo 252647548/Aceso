@@ -94,7 +94,6 @@ public class GradleUtil {
 
         public Object invoke(Object proxy, Method method, Object[] args)
                 throws Throwable {
-            println "args" + args
             return args[0].endsWith(SdkConstants.DOT_CLASS);
         }
     }
