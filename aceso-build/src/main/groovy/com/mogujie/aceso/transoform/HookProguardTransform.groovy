@@ -73,9 +73,6 @@ public class HookProguardTransform extends HookTransform {
 
     }
 
-    public File getMappingFile() {
-        return transform.getMappingFile()
-    }
 
     public static final HookTransform.TransformBuilder BUILDER = new HookTransform.TransformBuilder() {
 

@@ -18,9 +18,7 @@
 
 package com.mogujie.aceso.transoform
 
-import com.android.annotations.NonNull
 import com.android.build.api.transform.QualifiedContent
-import com.android.build.api.transform.SecondaryFile
 import com.android.build.api.transform.Transform
 import com.android.build.gradle.internal.pipeline.TransformTask
 import com.mogujie.aceso.processor.ClassProcessor
@@ -96,39 +94,16 @@ public abstract class HookTransform extends Transform {
         );
     }
 
-
-    @NonNull
     @Override
-    public Set<QualifiedContent.ContentType> getOutputTypes() {
-        return transform.getOutputTypes();
+    Object invokeMethod(String name, Object args) {
+        Log.i("invoke missing method : " + name + "  " + args)
+        return transform.invokeMethod(name, args)
     }
 
-    @NonNull
-    @Override
-    public Collection<File> getSecondaryFileInputs() {
-        return transform.getSecondaryFileInputs()
-    }
-
-    @NonNull
-    @Override
-    public Collection<File> getSecondaryDirectoryOutputs() {
-        return transform.getSecondaryDirectoryOutputs()
-    }
-
-    @NonNull
-    @Override
-    public Map<String, Object> getParameterInputs() {
-        return transform.getParameterInputs()
-    }
 
     @Override
     String getName() {
         return transform.getName()
-    }
-
-    @NonNull
-    public Set<QualifiedContent.Scope> getReferencedScopes() {
-        return transform.getReferencedScopes()
     }
 
     @Override
@@ -136,19 +111,10 @@ public abstract class HookTransform extends Transform {
         return transform.getInputTypes()
     }
 
-    @NonNull
-    public Collection<File> getSecondaryFileOutputs() {
-        return transform.getSecondaryFileOutputs();
-    }
 
     @Override
     Set<QualifiedContent.Scope> getScopes() {
         return transform.getScopes()
-    }
-
-    @NonNull
-    public Collection<SecondaryFile> getSecondaryFiles() {
-        return transform.getSecondaryFiles()
     }
 
     @Override
