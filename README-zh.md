@@ -14,6 +14,7 @@ Aceso是基于Instant Run Hot Swap的Android热修复方案，使用它你能在
 ## Limitations
 
 - 暂不支持static函数、构造函数的修复 
+- 被proguard shrink或inline掉的函数不能修复
 - 只支持修改函数体
 
 
