@@ -59,7 +59,7 @@ Aceso {
 4.Pls. reserve the file folder "build/intermediates/aceso" under module directory at each HotFix publishment.
  
 ## Generate Patch
-1.An additional Fix project is needed(pls. refer to [aceso-demo-fix](aceso-demo))
+1.An additional Fix project is needed(pls. refer to [aceso-demo-fix](aceso-demo-fix))
 
 2.Pls. add below codes in the outest prject's build.gradle:
 

@@ -63,7 +63,7 @@ Aceso {
  
 
 ## Generate Patch
-1.你需要创建一个额外Fix的工程（可参考[aceso-demo-fix](aceso-demo)）
+1.你需要创建一个额外Fix的工程（可参考[aceso-demo-fix](aceso-demo-fix)）
 
 2.在最外层project的build.gradle中加入以下代码：
 
