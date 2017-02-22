@@ -87,7 +87,7 @@ Aceso {
     instrumentJar = ‘The path of instrument.jar which generated in host project’
     allClassesJar = ‘The path of all-classes.jar which generated in host project’
     acesoMapping = ‘The path of aceso-mapping.txt which generated in host project’
-    }
+}
 
 ```
  
@@ -108,7 +108,7 @@ Aceso {
 
 3.Use 'adb push' command to push the apk generated to path '/sdcard/fix.apk'
 
-4.press fix button on the phone
+4.Press fix button on the phone
 
 5.Press test button, the 'has been fixed' would be displayed!
 

@@ -91,7 +91,7 @@ Aceso {
     instrumentJar = ‘宿主工程生成的instrument.jar的路径’
     allClassesJar = ‘宿主工程生成的all-classes.jar的路径’
     acesoMapping = ‘宿主工程生成的aceso-mapping.txt的路径’
-    }
+}
 
 ```
  
