@@ -27,7 +27,7 @@ buildscript {
     }
 
     dependencies {
-         classpath 'com.mogujie.gradle:aceso:0.0.2.7-LOCAL'
+         classpath 'com.mogujie.aceso:aceso-build:0.0.1'
     }
 }
 ```
@@ -38,7 +38,7 @@ buildscript {
 apply plugin: 'Aceso'
 
 dependencies {
-    compile 'com.mogujie:aceso-android-lib:0.0.1-LOCAL'
+    compile 'com.mogujie.aceso:aceso-android-lib:0.0.1'
 }
 
 ```
@@ -70,7 +70,7 @@ buildscript {
     }
 
     dependencies {
-         classpath 'com.mogujie.gradle:aceso:0.0.2.7-LOCAL'
+         classpath 'com.mogujie.aceso:aceso-build:0.0.1'
     }
 }
 ```
